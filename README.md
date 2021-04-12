@@ -11,9 +11,9 @@ This repository contains source code for the computational analysis of endoscopi
 
 Required packages: *OpenCV 4*, *NumPy*, *SciPy*.
 
-All code executable on a standard desktop PC running the Microsoft Windows 10 operating system.
+All code executable on a standard desktop PC.
 
-Code developed using PyCharm (version 2021.1).
+Code developed in *Python* (version 3.8.8) using the *PyCharm* IDE (version 2021.1).
 
 # How to Cite this Repository
 
