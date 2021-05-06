@@ -13,7 +13,7 @@ Required packages: *OpenCV 4*, *NumPy*, *SciPy*.
 
 All code executable on a standard desktop PC.
 
-Code developed in *Python* (version 3.8.8) using the *PyCharm* IDE (version 2021.1, JetBrains s.r.o., Prague, Czech Republic).
+Code developed in *Python* (version 3.8.8) using the *PyCharm Professional* IDE (version 2021.1, JetBrains s.r.o., Prague, Czech Republic).
 
 # How to Cite this Repository
 
