@@ -26,7 +26,7 @@ All code executable on a standard desktop PC (no GPU required).
      FastOltmannIEEE.2021, 
      author={Jacob F. Fast and Andra Oltmann and Svenja Spindeldreier and Martin Ptok}, 
      year={2021},
-     title={Code repository associated with the contribution "Extraction of Clinically Relevant Parameters of the Laryngeal Adductor Reflex from Laryngoscopic High-Speed Sequences by Computational Image Processing"}, 
+     title={Code repository associated with the contribution "Computational Analysis of the Droplet-Stimulated Laryngeal Adductor Reflex in Endoscopic High-Speed Frame Sequences"}, 
      DOI={},
      publisher={GitHub}
      }
