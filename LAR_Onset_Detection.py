@@ -412,6 +412,15 @@ print("cy of glottis centroid (non-dense contour): ", cy)
 # 'glottal_area' is the glottal area in percent with respect to the total frame size in pixels
 glottal_area = (cv2.contourArea(glottis_contour) / (frame.shape[0] * frame.shape[1])) * 100
 
+# instantiate VideoWriter object
+output_rotation = cv2.VideoWriter(
+    saving_path + patient + "_" + sequence_number + '_rotation_correction.mp4',
+    cv2.VideoWriter_fourcc(*"mp4v"), 15.0, (256, 256))
+
+# instantiate VideoWriter object
+output_all = cv2.VideoWriter(saving_path + patient + "_" + sequence_number + '_rotation_and_segmentation_result.mp4',
+                         cv2.VideoWriter_fourcc(*"mp4v"), 15.0, (256, 256))
+
 # perform principal component analysis for identification of glottal midline orientation
 if mode_orientation_correction == "PCA":
     # perform singular value decomposition to identify orientation of glottal midline
@@ -475,6 +484,8 @@ elif mode_orientation_correction == "iterative":
             frame_iterative = cv2.drawContours(frame_iterative, [glottis_contour_iterative], 0, [155, 88, 0], 1)
             # show frame
             cv2.imshow("Rotated frame and glottis contour", frame_iterative)
+            output_rotation.write(frame_iterative)
+            output_all.write(frame_iterative)
             key = cv2.waitKey(40) & 0xFF
             # if escape key was pressed
             if key == 27:
@@ -510,6 +521,8 @@ elif mode_orientation_correction == "iterative":
             frame_iterative = cv2.drawContours(frame_iterative, [glottis_contour_iterative], 0, [155, 88, 0], 1)
             # show frame
             cv2.imshow("Rotated frame and glottis contour", frame_iterative)
+            output_rotation.write(frame_iterative)
+            output_all.write(frame_iterative)
             key = cv2.waitKey(40) & 0xFF
             # if escape key was pressed
             if key == 27:
@@ -660,7 +673,7 @@ frame_result = cv2.line(frame_result, (int(left_point_glottis[0]), int(left_poin
                         (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
 frame_result = cv2.line(frame_result, (int(right_point_glottis[0]), int(right_point_glottis[1])),
                         (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
-# draw glottal angle as arc
+# draw glottal angle
 frame_result = cv2.ellipse(frame_result,
                            (int(vertex_point[0]), int(vertex_point[1])),
                            (int((vertex_point[1]-left_point_glottis[1])/2.0),
@@ -676,7 +689,11 @@ frame_result_large = cv2.resize(frame_result, (int(2.0 * frame_result.shape[1]),
                                 interpolation=cv2.INTER_LINEAR)
 display.displayFrame("Segmentation Result (First Frame)", frame_result_large, 0)
 cv2.imwrite(saving_path + patient + "_" + sequence_number + "_Glottal_Segmentation_First_Frame.png", frame_result)
-
+for i in range(0, 30):
+    output_rotation.write(frame_result)
+    output_all.write(frame_result)
+    i += 1
+output_rotation.release()
 # add metrics to lists
 frame_number_list_distance = list()
 distance_list = list()
@@ -881,7 +898,7 @@ while video.isOpened():
                                          (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
                         frame = cv2.line(frame, (int(right_point_glottis[0]), int(right_point_glottis[1])),
                                          (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
-                        # draw glottal angle as arc
+                        # draw glottal angle
                         frame = cv2.ellipse(frame, (int(vertex_point[0]), int(vertex_point[1])),
                                             (int((vertex_point[1]-left_point_glottis[1])/2.0),
                                              int((vertex_point[1]-left_point_glottis[1])/2.0)),
@@ -930,7 +947,9 @@ while video.isOpened():
             cv2.waitKey(1)
             # save frame showing glottis segmentation result
             output.write(frame)
+            output_all.write(frame)
 output.release()
+output_all.release()
 end = time.time()
 
 # DATA PROCESSING
