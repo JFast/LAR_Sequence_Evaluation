@@ -1,6 +1,8 @@
 # Sequence_Evaluation_IEEE_TMI
 This repository contains source code for the computational analysis of endoscopic high-speed sequences showing the laryngeal adductor reflex (LAR) response after droplet-based stimulation.
 
+THIS REPOSITORY IS PROVIDED PRIOR TO ACCEPTANCE OF THE ASSOCIATED MANUSCRIPT.
+
 # Table of Contents
 * [Requirements](#requirements)
 * [How to Cite this Repository](#how-to-cite-this-repository)
