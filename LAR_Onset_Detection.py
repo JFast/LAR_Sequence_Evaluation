@@ -67,7 +67,7 @@ def changeMask(x, y):
 
 # PATH DEFINITIONS
 patient = "05"
-sequence_number = "03"
+sequence_number = "06"
 # SPREADSHEET DEFINITIONS
 spreadsheet_row = 52
 # selection of glottal orientation correction method (PCA/iterative method)
@@ -448,12 +448,15 @@ elif mode_orientation_correction == "iterative":
     angle_before_cw = 0.0
     angle_before_ccw = 0.0
     while 1:
-        # localization of points on vocal fold edges for calculation of glottal angle
-        left_point_glottis, right_point_glottis, left_point_bottom, right_point_bottom = \
-            vocalfold.getGlottalPoints(frame, glottis_contour_iterative)
-        # identification of vertex point of glottal angle
-        vertex_point = vocalfold.getVertexPoint(left_point_glottis, right_point_glottis, left_point_bottom,
-                                                right_point_bottom)
+        try:
+            # localization of points on vocal fold edges for calculation of glottal angle
+            left_point_glottis, right_point_glottis, left_point_bottom, right_point_bottom = \
+                vocalfold.getGlottalPoints(frame, glottis_contour_iterative)
+            # identification of vertex point of glottal angle
+            vertex_point = vocalfold.getVertexPoint(left_point_glottis, right_point_glottis, left_point_bottom,
+                                                    right_point_bottom)
+        except:
+            pass
         # calculation of horizontal position of vertex point in relation to left and right point for glottal angle
         # value < 0: vertex point left of left point; 0 < value < 1: vertex point between left and right point;
         # value > 1: vertex point right of right point
@@ -1086,7 +1089,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=33).value = rmse
+    sheet.cell(row=spreadsheet_row, column=34).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1099,7 +1102,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=34).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=35).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: symm. sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1142,7 +1145,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=35).value = rmse
+    sheet.cell(row=spreadsheet_row, column=36).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1155,7 +1158,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=36).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=37).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: asymmetrical sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1202,7 +1205,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=37).value = rmse
+    sheet.cell(row=spreadsheet_row, column=38).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1215,7 +1218,7 @@ try:
     file.write("\n\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=38).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=39).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: Gompertz-like fit not successful!\n\n")
 
@@ -1260,7 +1263,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=39).value = rmse
+    sheet.cell(row=spreadsheet_row, column=40).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1272,7 +1275,7 @@ try:
     file.write("\n\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=40).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=41).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: cubic polynomial fit not successful!\n\n")
 
@@ -1402,7 +1405,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=41).value = rmse
+    sheet.cell(row=spreadsheet_row, column=42).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1415,7 +1418,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=42).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=43).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (symmetrical sigmoid fit with vertical offset)
@@ -1494,7 +1497,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=43).value = rmse
+    sheet.cell(row=spreadsheet_row, column=44).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1507,7 +1510,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=44).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=45).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (generalized logistic function)
@@ -1586,7 +1589,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=45).value = rmse
+    sheet.cell(row=spreadsheet_row, column=46).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1599,7 +1602,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=46).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=47).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (Gompertz-like function)
@@ -1675,7 +1678,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=47).value = rmse
+    sheet.cell(row=spreadsheet_row, column=48).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1687,7 +1690,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=48).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=49).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (cubic fit function)
@@ -1781,7 +1784,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=49).value = rmse
+    sheet.cell(row=spreadsheet_row, column=50).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1793,7 +1796,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=50).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=51).value = error_sum_MAE
 
     # check if vertical offset parameter value below 0.1
     if popt_area_sigmoid_offset[3] < 0.1:
@@ -1840,7 +1843,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=51).value = rmse
+    sheet.cell(row=spreadsheet_row, column=52).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1853,7 +1856,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=52).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=53).value = error_sum_MAE
 
     # if vertical offset of glottal area below 0.1
     if popt_area_glf[3] < 0.1:
@@ -1902,7 +1905,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=53).value = rmse
+    sheet.cell(row=spreadsheet_row, column=54).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1914,7 +1917,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=54).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=55).value = error_sum_MAE
 
     # if vertical offset of glottal area below 0.1
     if popt_area_gompertz[0] < 0.1:
@@ -1960,7 +1963,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=55).value = rmse
+    sheet.cell(row=spreadsheet_row, column=56).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1972,7 +1975,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=56).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=57).value = error_sum_MAE
 except:
     file.write("Glottal area: cubic polynomial fit not successful!\n\n")
 
@@ -2094,7 +2097,7 @@ frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shap
 cv2.imshow("Reverse Analysis", frame_large)
 cv2.waitKey()
 input_user = input("Is the glottis open and was glottal closure achieved during LAR? (y/n)\n")
-if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
+if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
     file.write("Glottal closure achieved and glottis open at end of sequence: yes\n\n")
     frame_number = 1
 
@@ -2306,10 +2309,6 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
             cv2.waitKey(1)
             # write frame to result sequence for inverse analysis step
             output2.write(frame)
-    if output2:
-        output2.release()
-    if output_all:
-        output_all.release()
 
     plot.plotArea(frame_number_list_area, area_list, saving_path + patient + "_" + sequence_number +
                   "_Reverse_Area.png")
@@ -2336,3 +2335,11 @@ else:
     file.close()
     # close all windows
     display.destroyWindows()
+try:
+    output2.release()
+except:
+    pass
+try:
+    output_all.release()
+except:
+    pass
