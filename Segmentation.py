@@ -1,15 +1,17 @@
 import cv2
 import numpy as np
+import math
+from scipy import ndimage
 
 
-def segment_glottis_point(watershed, glottis_point_x, glottis_point_y, size_y, size_x):
+def segment_glottis_point(watershed, glottis_point_x, glottis_point_y, size_x, size_y):
     """
     - identifies segment of watershed transformation containing reference point
     :param watershed: marker image with segments of watershed transformation
     :param glottis_point_x: x coordinate of reference point
     :param glottis_point_y: y coordinate of reference point
-    :param size_y: frame size in vertical direction
     :param size_x: frame size in horizontal direction
+    :param size_y: frame size in vertical direction
     :return: index: index of segment of watershed transformation containing reference point
     """
     index = watershed[glottis_point_y, glottis_point_x]
@@ -367,6 +369,19 @@ def getGlottisContourRegionGrowing(segmented_image):
     return glottis_contour
 
 
+def getGlottisContourRegionGrowingDense(segmented_image):
+    """
+    - determines dense glottis contour after region growing
+    :param segmented_image: region growing result image
+    :return: points of dense glottis contour (any two subsequent points in 'glottis_contour' will be neighboring pixels)
+    """
+    glottis_contour = []
+    contours, hierarchy = cv2.findContours(segmented_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    if len(contours) > 0:
+        glottis_contour = contours[0]
+    return glottis_contour
+
+
 def getHomogeneityCriterion(frame, seed_points):
     """
     - determines homogeneity criterion for glottal segmentation by region growing
@@ -591,3 +606,66 @@ def regionGrowingRefined(frame_gray, seed_points, homogeneity_criteria):
     frame_result = frame_gray.copy()
     frame_result[segmented_frame == 255] = 255
     return segmented_frame
+
+
+def getGlottalOrientation(glottis_contour):
+    """
+    - calculates orientation of glottal midline in frame
+    - function based on https://docs.opencv.org/4.5.2/d1/dee/tutorial_introduction_to_pca.html, accessed on 08/03/2021
+    :param glottis_contour: glottis outline, given as set of points
+    :return: glottal_rotation_angle: inclination angle of glottal midline with respect to vertical direction in degrees
+    """
+    # identify number of points in glottis contour
+    size_contour = len(glottis_contour)
+    # initialize empty NumPy array for storage of re-ordered contour points
+    contour_pts = np.empty((size_contour, 2), dtype=np.float64)
+    # insert contour points in new array 'contour_pts'
+    for i in range(contour_pts.shape[0]):
+        # horizontal coordinates of contour points
+        contour_pts[i, 0] = glottis_contour[i, 0, 1]
+        # vertical coordinates of contour points
+        contour_pts[i, 1] = glottis_contour[i, 0, 0]
+    print("Contour points for PCA: ", contour_pts)
+    # Perform PCA analysis
+    mean = np.empty((0))
+    mean, eigenvectors, eigenvalues = cv2.PCACompute2(contour_pts, mean)
+    # calculate inclination of glottal midline with respect to vertical direction (in radians)
+    glottal_rotation_angle = math.atan2(eigenvectors[0, 1], eigenvectors[0, 0])
+    # return angle
+    return math.degrees(glottal_rotation_angle)
+
+
+def rotate_frame(frame, angle):
+    """
+    - rotates image using given angle (OpenCV-based function)
+    - source: https://stackoverflow.com/questions/9041681/opencv-python-rotate-image-by-x-degrees-around-specific-point
+    - (accessed on 08/03/2021)
+    :param frame: frame to be rotated
+    :param angle: desired rotation angle in degrees
+    :return: frame_rotated: frame after rotation by 'angle' degrees (dimensions match original frame dimensions)
+    """
+    frame_center = tuple(np.array(frame.shape[1::-1])*0.5)
+    rot_mat = cv2.getRotationMatrix2D(frame_center, angle, 1.0)
+    frame_rotated = cv2.warpAffine(frame, rot_mat, frame.shape[1::-1], flags=cv2.INTER_LINEAR,
+                                   borderMode=cv2.BORDER_DEFAULT)
+    return frame_rotated
+
+
+def rotate_point(center, point, angle):
+    """
+    - rotates point around center by given angle
+    :param center: center of rotation
+    :param point: point to be rotated
+    :param angle: desired rotation angle in degrees
+    :return: point: point after rotation by given angle around given center of rotation
+    """
+    # translate point
+    x_translated = point[0] - center[0]
+    y_translated = point[1] - center[1]
+    # rotate point
+    point[0] = x_translated * math.cos(math.radians(angle)) + y_translated * math.sin(math.radians(angle))
+    point[1] = -x_translated * math.sin(math.radians(angle)) + y_translated * math.cos(math.radians(angle))
+    # translate point back
+    point[0] = int(round(point[0] + center[0]))
+    point[1] = int(round(point[1] + center[1]))
+    return point

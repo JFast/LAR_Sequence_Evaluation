@@ -473,14 +473,20 @@ def linearFitArea(frames, signal, lines_lar_begin, impact, saving_path):
     """
     plt.plot(frames, signal, '+', color ='#00589b', label="data")
     frame_to_stop = fit.getStopFrame(frames, signal)
-    plt.plot((0, frames[frame_to_stop] + 100), (0 * lines_lar_begin[2] + lines_lar_begin[3], (frames[frame_to_stop] + 100) * lines_lar_begin[2] + lines_lar_begin[3]), '--', color='#e77b29', label="linear fit")
-    plt.plot((0, frames[frame_to_stop] + 100), (0 * lines_lar_begin[0] + lines_lar_begin[1], (frames[frame_to_stop] + 100) * lines_lar_begin[0] + lines_lar_begin[1]), '--', color='#e77b29', label="linear fit")
+    plt.plot((0, frames[frame_to_stop] + 100),
+             (0 * lines_lar_begin[2] + lines_lar_begin[3],
+              (frames[frame_to_stop] + 100) * lines_lar_begin[2] + lines_lar_begin[3]),
+             '--', color='#e77b29', label="linear fit")
+    plt.plot((0, frames[frame_to_stop] + 100),
+             (0 * lines_lar_begin[0] + lines_lar_begin[1],
+              (frames[frame_to_stop] + 100) * lines_lar_begin[0] + lines_lar_begin[1]),
+             '--', color='#e77b29', label="linear fit")
     plt.plot((impact[0]), (impact[1]), 'k', marker='X', label="intersection")
     plt.grid(True)
     plt.title("linear fit of glottal surface area")
     plt.xlabel("frame index")
     plt.ylabel("glottal surface area in percent")
-    plt.axis([0, frames[frame_to_stop] + 100, 0, impact[1] + 2])
+    plt.axis([0, frames[frame_to_stop] + 100, 0, impact[1] + 0.5])
     plt.legend(loc=3, framealpha=1.0)
     plt.savefig(saving_path)
     plt.show()
@@ -499,8 +505,14 @@ def linearFitDistance(frames, signal, lines_lar_begin, impact, saving_path):
     """
     plt.plot(frames, signal, '+', color ='#00589b', label="data")
     frame_to_stop = fit.getStopFrame(frames, signal)
-    plt.plot((0, frames[frame_to_stop] + 100), (0 * lines_lar_begin[2] + lines_lar_begin[3], (frames[frame_to_stop] + 100) * lines_lar_begin[2] + lines_lar_begin[3]), '--', color='#e77b29', label="linear fit")
-    plt.plot((0, frames[frame_to_stop] + 100), (0 * lines_lar_begin[0] + lines_lar_begin[1], (frames[frame_to_stop] + 100) * lines_lar_begin[0] + lines_lar_begin[1]), '--', color='#e77b29', label="linear fit")
+    plt.plot((0, frames[frame_to_stop] + 100),
+             (0 * lines_lar_begin[2] + lines_lar_begin[3],
+              (frames[frame_to_stop] + 100) * lines_lar_begin[2] + lines_lar_begin[3]),
+             '--', color='#e77b29', label="linear fit")
+    plt.plot((0, frames[frame_to_stop] + 100),
+             (0 * lines_lar_begin[0] + lines_lar_begin[1],
+              (frames[frame_to_stop] + 100) * lines_lar_begin[0] + lines_lar_begin[1]),
+             '--', color='#e77b29', label="linear fit")
     plt.plot((impact[0]), (impact[1]), 'k', marker='X', label="intersection")
     plt.grid(True)
     # plt.title("linear fit of vocal fold edge distance")

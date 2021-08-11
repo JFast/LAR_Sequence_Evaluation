@@ -124,10 +124,10 @@ def getBottomPointAngle(hull, referenceHeight, leftPoint, left):
 def getAngleBetweenPoints(point1, point2, point3):
     """
     - computes angle between two lines defined by three points (line 1: point 1 to point 2, line 2: point 2 to point 3)
-    :param point1:
-    :param point2:
-    :param point3:
-    :return: angle between lines defined by points point1, point2 and point3
+    :param point1: point on line 1
+    :param point2: point on both lines
+    :param point3: point on line 2
+    :return: angle between lines defined by points point1, point2 and point3 (in degrees)
     """
     # compute lengths of line segments between points
     a = math.sqrt(pow(abs(point1[0] - point2[0]), 2) + pow(abs(point1[1] - point2[1]), 2))
@@ -204,6 +204,22 @@ def getDistancePoints(frame, glottisContour, referenceHeight):
     return left_point_glottis, right_point_glottis
 
 
+def getDistancePointsConstantHeight(frame, glottisContour, distanceHeight):
+    """
+    - identifies points on vocal fold edges required for distance measurement
+    - in contrast to Lohscheller et al., distance defined at constant height in image (no glottis translation expected)
+    :param frame: input frame
+    :param glottisContour: glottis contour
+    :param distanceHeight: vertical coordinate of vocal fold edge distance (constant over sequence)
+    :return: left and right point on vocal fold edges
+    """
+    hull = getConvexHull(glottisContour)
+    left_point_hull, right_point_hull = getPointsOnHull(frame.shape[0], frame.shape[1], hull, distanceHeight)
+    left_point_glottis = getPointOnGlottisContour(frame.shape[0], frame.shape[1], glottisContour, left_point_hull)
+    right_point_glottis = getPointOnGlottisContour(frame.shape[0], frame.shape[1], glottisContour, right_point_hull)
+    return left_point_glottis, right_point_glottis
+
+
 def getGlottalPoints(frame, glottisContour):
     """
     - identifies points on vocal fold edges required for glottal angle computation:
@@ -234,6 +250,7 @@ def getGlottalPoints(frame, glottisContour):
     # frame_folds = cv2.drawContours(frame_folds, [hull], 0, [0, 255, 0], 1)
 
     # localization of central point between left and right angle-defining point on vocal fold edges
+    # (at height 'reference_height_top')
     mid_point = [int(left_point_glottis[0] + abs((left_point_glottis[0] - right_point_glottis[0])/2.0)),
                  int(left_point_glottis[1])]
     # initialize empty list
@@ -241,9 +258,9 @@ def getGlottalPoints(frame, glottisContour):
     left_up.append(left_point_glottis)
     for point_ in hull:
         point = point_[0]
-        # if point left of central point
+        # if point left of central point (at height 'reference_height_top')
         if point[0] < mid_point[0]:
-            # if point above central point
+            # if point above central point (at height 'reference_height_top')
             if point[1] < mid_point[1]:
                 left_up.append([point[0], point[1]])
     # return list 'left_up', sorted by descending value of vertical coordinate of points
@@ -254,6 +271,7 @@ def getGlottalPoints(frame, glottisContour):
     point_left_up = getPoint(left_up)
     # if point above point on vocal fold edge at threshold coordinate value 'reference_height_top'
     if point_left_up[1] < left_point_glottis[1]:
+        # set 'point_left_up' to point on left vocal fold edge at height 'reference_height_top'
         point_left_up = left_point_glottis
     # frame_folds = cv2.circle(frame_folds, (int(point_left_up[0]), int(point_left_up[1])), 2, [0, 0, 255], -1)
 
@@ -433,18 +451,18 @@ def getVertexPoint(left_point_glottis, right_point_glottis, left_point_bottom, r
 
 def angle_straight_lines(left_point_glottis, right_point_glottis, vertex_point):
     """
-    - computes angle between two lines defined by slopes and vertex
+    - computes angle between two lines defined by two points and vertex point
     :param left_point_glottis: point on left vocal fold edge
     :param right_point_glottis: point on right vocal fold edge
-    :param vertex_point: vertex between the two vocal fold edges
-    :return: angle of lines 1 and 2
+    :param vertex_point: vertex of glottal angle
+    :return: angle between lines 1 and 2 in degree
     """
     slope_1 = get_slope(left_point_glottis, vertex_point)
     slope_2 = get_slope(right_point_glottis, vertex_point)
     if slope_1 == 0:
         angle = math.atan2(abs((0 - slope_2)), abs(1 + 0 * slope_2))
         angle = (angle / math.pi) * 180
-        angle = (-1)*(angle - 90)
+        angle = (-1) * (angle - 90)
     elif slope_2 == 0:
         angle = math.atan2(abs((slope_1 - 0)), abs(1 + slope_1 * 0))
         angle = (angle / math.pi) * 180
@@ -452,6 +470,12 @@ def angle_straight_lines(left_point_glottis, right_point_glottis, vertex_point):
     else:
         angle = math.atan2(abs((slope_1 - slope_2)), abs(1 + slope_1 * slope_2))
         angle = (angle / math.pi) * 180
+    # if both lines exactly vertical or both lines exactly horizontal (parallel lines)
+    if slope_1 == 0 and slope_2 == 0:
+        angle = 0
+    # if lines exactly perpendicular
+    if (slope_1 * slope_2) == -1.0:
+        angle = 90.0
     return angle
 
 
@@ -473,4 +497,7 @@ def angle_straight_lines_iterative(slope_1, slope_2):
     else:
         angle = math.atan2(abs((slope_1 - slope_2)), abs(1 + slope_1 * slope_2))
         angle = (angle / math.pi) * 180
+    # if both lines vertical or both lines horizontal
+    if slope_1 == 0 and slope_2 == 0:
+        angle = 0
     return angle

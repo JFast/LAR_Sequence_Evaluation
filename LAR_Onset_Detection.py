@@ -16,7 +16,6 @@ import openpyxl as pxl
 
 # USER INTERACTION
 
-
 # mouse callback
 def callbackMouseClick(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDBLCLK:
@@ -67,10 +66,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "10"
-sequence_number = "03"
+patient = "05"
+sequence_number = "01"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 83
+spreadsheet_row = 52
 # selection of glottal orientation correction method (PCA/iterative method)
 # mode_orientation_correction = "PCA"
 mode_orientation_correction = "iterative"
@@ -132,7 +131,8 @@ while video.isOpened():
         intensity_matrix_columns = reference.getIntensityMatrix(intensity_matrix_columns, intensity_columns)
 
         # show V channel of original frame to inform user about progress
-        frame_v_large = cv2.resize(frame_v, (int(2.0 * frame_v.shape[1]), int(2.0 * frame_v.shape[0])), interpolation=cv2.INTER_LINEAR)
+        frame_v_large = cv2.resize(frame_v, (int(2.0 * frame_v.shape[1]), int(2.0 * frame_v.shape[0])),
+                                   interpolation=cv2.INTER_LINEAR)
         display.displayFrame("Current Frame", frame_v_large, 1)
 
 # calculate average intensity differences along frame columns over all frames (yields row vector)
@@ -313,17 +313,17 @@ index_reference_point = segmentation.segment_glottis_point(watershed, x, y, fram
 # display.displayWatershedSegmentation(frame, watershed, [0, 0, 255])
 
 # get glottis contour from watershed result
-glottis_contour_watershed = segmentation.getGlottisContourFromWatershed(frame.shape[1], frame.shape[0], watershed,
+glottis_contour_watershed = segmentation.getGlottisContourFromWatershed(frame.shape[0], frame.shape[1], watershed,
                                                                         index_reference_point)
 
 # apply region growing (automated)
 # get extremal points on glottis contour (watershed result)
 extLeft, extRight, extTop, extBot = segmentation.getExtremePointsContour(glottis_contour_watershed)
 # get point grid for region growing procedure (rectangular)
-mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame.shape[1], frame.shape[0],
+mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame.shape[0], frame.shape[1],
                                                                 extLeft, extRight, extTop, extBot)
 # get seed point grid for region growing procedure (adapted to glottis contour)
-seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[1], frame.shape[0],
+seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[0], frame.shape[1],
                                                                 glottis_contour_watershed, mask_grid_region_growing)
 # calculate homogeneity criterion for region growing procedure
 homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
@@ -383,7 +383,7 @@ while input_user_check:
         frame_result = frame.copy()
         input_user_check = False
         glottis_contour = glottis_contour_region_growing
-        # calculate dense glottis contour for rotation identification
+        # calculate dense glottis contour for rotation identification via PCA
         glottis_contour_dense = segmentation.getGlottisContourRegionGrowingDense(region_growing)
         print("Identification of LAR onset time starting!")
         file.write("Segmentation correct: yes\n")
@@ -414,21 +414,27 @@ glottal_area = (cv2.contourArea(glottis_contour) / (frame.shape[0] * frame.shape
 
 # instantiate VideoWriter object
 output_rotation = cv2.VideoWriter(
-    saving_path + patient + "_" + sequence_number + '_rotation_correction.mp4',
+    saving_path + patient + "_" + sequence_number + '_rotation_correction_result.mp4',
     cv2.VideoWriter_fourcc(*"mp4v"), 15.0, (256, 256))
 
 # instantiate VideoWriter object
-output_all = cv2.VideoWriter(saving_path + patient + "_" + sequence_number + '_rotation_and_segmentation_result.mp4',
-                         cv2.VideoWriter_fourcc(*"mp4v"), 15.0, (256, 256))
+output_rot_seg = cv2.VideoWriter(saving_path + patient + "_" + sequence_number +
+                                 '_rotation_and_segmentation_result.mp4', cv2.VideoWriter_fourcc(*"mp4v"),
+                                 15.0, (256, 256))
+
+# instantiate VideoWriter object
+output_all = cv2.VideoWriter(saving_path + patient + "_" + sequence_number +
+                                 '_full_result.mp4', cv2.VideoWriter_fourcc(*"mp4v"),
+                                 15.0, (256, 256))
 
 # perform principal component analysis for identification of glottal midline orientation
 if mode_orientation_correction == "PCA":
-    # perform singular value decomposition to identify orientation of glottal midline
+    # perform singular value decomposition to identify orientation of glottal midline in degrees
     # (required to rotate all frames for correct identification of glottal angle and vocal fold edge distance)
     angle_glottal_midline = segmentation.getGlottalOrientation(glottis_contour_dense)
-    print("angle_glottal_midline in degrees: ", math.degrees(angle_glottal_midline))
-# perform iterative procedure using relative horizontal position of vertex point for identification of
-# glottal midline orientation
+    print("angle_glottal_midline in degrees: ", angle_glottal_midline)
+# perform iterative procedure using relative horizontal position of vertex point
+# for identification of glottal midline orientation
 elif mode_orientation_correction == "iterative":
     # initialize variable for glottal midline inclination angle in degrees
     angle_glottal_midline_iterative = 0.0
@@ -439,6 +445,9 @@ elif mode_orientation_correction == "iterative":
     glottis_contour_iterative = glottis_contour.copy()
     # initialize rotated frame for iterative angle identification
     frame_initial = frame.copy()
+    # initialize variables for rotation angle storage
+    angle_before_cw = 0.0
+    angle_before_ccw = 0.0
     while 1:
         # localization of points on vocal fold edges for calculation of glottal angle
         left_point_glottis, right_point_glottis, left_point_bottom, right_point_bottom = \
@@ -457,71 +466,62 @@ elif mode_orientation_correction == "iterative":
         cv2.namedWindow("Rotated frame and glottis contour", cv2.WINDOW_AUTOSIZE)
         # if vertex located closer to left point on vocal fold edge
         if relative_location_vertex_point_horizontal_iterative < 0.48:
-            # decrement total rotation angle since start of iterative procedure
+            # decrement glottal midline inclination angle in degrees
             angle_glottal_midline_iterative -= delta_angle
             # rotate glottis contour CCW by total rotation angle to correct rotation of glottal midline
             # for all points of initial glottis contour (no. of points in contour remains constant)
             for i in range(0, len(glottis_contour_initial)):
                 # access current point
                 point = glottis_contour_initial[i][0].copy()
-                # translate point
-                x_point_translated = point[0] - x_center
-                y_point_translated = point[1] - y_center
-                # rotate point
-                point[0] = x_point_translated * math.cos(-math.radians(angle_glottal_midline_iterative)) + \
-                           y_point_translated * math.sin(-math.radians(angle_glottal_midline_iterative))
-                point[1] = -x_point_translated * math.sin(-math.radians(angle_glottal_midline_iterative)) + \
-                           y_point_translated * math.cos(-math.radians(angle_glottal_midline_iterative))
-                # translate rotated point back
-                point[0] = int(point[0] + x_center)
-                point[1] = int(point[1] + y_center)
+                # rotate point around frame center
+                point = segmentation.rotate_point((x_center, y_center), point, -angle_glottal_midline_iterative)
                 # save rotated point
                 glottis_contour_iterative[i][0][0] = point[0].copy()
                 glottis_contour_iterative[i][0][1] = point[1].copy()
             # rotate 'frame_iterative'
-            frame_iterative = segmentation.rotate_frame(frame_initial, -math.radians(angle_glottal_midline_iterative))
+            frame_iterative = segmentation.rotate_frame(frame_initial, -angle_glottal_midline_iterative)
             # draw rotated glottis contour on rotated frame
             frame_iterative = cv2.drawContours(frame_iterative, [glottis_contour_iterative], 0, [155, 88, 0], 1)
             # show frame
             cv2.imshow("Rotated frame and glottis contour", frame_iterative)
+            # write frame to output sequences
             output_rotation.write(frame_iterative)
+            output_rot_seg.write(frame_iterative)
             output_all.write(frame_iterative)
+
             key = cv2.waitKey(40) & 0xFF
             # if escape key was pressed
             if key == 27:
                 cv2.destroyWindow("Rotated frame and glottis contour")
                 angle_glottal_midline = 0.0
                 break
+            if angle_glottal_midline_iterative == angle_before_ccw:
+                cv2.destroyWindow("Rotated frame and glottis contour")
+                angle_glottal_midline = angle_glottal_midline_iterative + (0.5 * delta_angle)
+                break
+            angle_before_ccw = angle_glottal_midline_iterative
         # if vertex located closer to right point on vocal fold edge
         elif relative_location_vertex_point_horizontal_iterative > 0.52:
-            # increment total rotation angle since start of iterative procedure
+            # increment glottal midline inclination angle in degrees
             angle_glottal_midline_iterative += delta_angle
             # rotate glottis contour CW by total rotation angle to correct rotation of glottal midline
             # for all points of initial glottis contour (no. of points in contour remains constant)
             for i in range(0, len(glottis_contour_initial)):
                 # access current point
                 point = glottis_contour_initial[i][0].copy()
-                # translate point
-                x_point_translated = point[0] - x_center
-                y_point_translated = point[1] - y_center
-                # rotate point
-                point[0] = x_point_translated * math.cos(math.radians(angle_glottal_midline_iterative)) + \
-                           y_point_translated * math.sin(math.radians(angle_glottal_midline_iterative))
-                point[1] = -x_point_translated * math.sin(math.radians(angle_glottal_midline_iterative)) + \
-                           y_point_translated * math.cos(math.radians(angle_glottal_midline_iterative))
-                # translate rotated point back
-                point[0] = int(point[0] + x_center)
-                point[1] = int(point[1] + y_center)
+                # rotate point around frame center
+                point = segmentation.rotate_point((x_center, y_center), point, -angle_glottal_midline_iterative)
                 # save rotated point
                 glottis_contour_iterative[i][0][0] = point[0].copy()
                 glottis_contour_iterative[i][0][1] = point[1].copy()
             # rotate 'frame_iterative'
-            frame_iterative = segmentation.rotate_frame(frame_initial, math.radians(angle_glottal_midline_iterative))
+            frame_iterative = segmentation.rotate_frame(frame_initial, -angle_glottal_midline_iterative)
             # draw rotated glottis contour on rotated frame
             frame_iterative = cv2.drawContours(frame_iterative, [glottis_contour_iterative], 0, [155, 88, 0], 1)
             # show frame
             cv2.imshow("Rotated frame and glottis contour", frame_iterative)
             output_rotation.write(frame_iterative)
+            output_rot_seg.write(frame_iterative)
             output_all.write(frame_iterative)
             key = cv2.waitKey(40) & 0xFF
             # if escape key was pressed
@@ -529,12 +529,17 @@ elif mode_orientation_correction == "iterative":
                 cv2.destroyWindow("Rotated frame and glottis contour")
                 angle_glottal_midline = 0.0
                 break
+            if angle_glottal_midline_iterative == angle_before_cw:
+                cv2.destroyWindow("Rotated frame and glottis contour")
+                angle_glottal_midline = angle_glottal_midline_iterative - (0.5 * delta_angle)
+                break
+            angle_before_cw = angle_glottal_midline_iterative
         # if vertex located centrally between left and right point of glottal angle (in horizontal direction)
-        # ideal rotation correction angle found, convert final value into radians
+        # ideal rotation correction angle found
         else:
             cv2.destroyWindow("Rotated frame and glottis contour")
-            angle_glottal_midline = math.radians(angle_glottal_midline_iterative)
-            print("angle_glottal_midline in degrees: ", angle_glottal_midline_iterative)
+            angle_glottal_midline = angle_glottal_midline_iterative
+            print("angle_glottal_midline in degrees: ", angle_glottal_midline)
             break
 
 # rotate frame to correct identified rotation of glottal midline
@@ -570,17 +575,17 @@ elif k == ord('m'):
         # read trackbar value in degrees and subtract offset of +45 degrees
         angle_interactive = cv2.getTrackbarPos("ang+45deg", "Rotated Frame") - 45
         # show rotated frame
-        frame_rotation_interactive = segmentation.rotate_frame(frame, math.radians(angle_interactive))
+        frame_rotation_interactive = segmentation.rotate_frame(frame, angle_interactive)
         cv2.imshow("Rotated Frame", frame_rotation_interactive)
         # poll user input
         key = cv2.waitKey(1) & 0xFF
         # if return key pressed: save current rotation correction angle
         if key == 13:
-            angle_glottal_midline = -math.radians(angle_interactive)
+            angle_glottal_midline = -angle_interactive
             break
     # write rotation correction angle to file
     file.write("Rotation correction by angle (in degrees, positive CCW): ")
-    file.write(str(-math.degrees(angle_glottal_midline)))
+    file.write(str(-angle_glottal_midline))
     file.write("\n")
     # close windows
     cv2.destroyWindow("Rotated Frame")
@@ -593,9 +598,8 @@ else:
     cv2.destroyWindow("First Frame (Rotated)")
     # write rotation correction angle to file
     file.write("Rotation correction by angle (in degrees, positive CCW): ")
-    file.write(str(-math.degrees(angle_glottal_midline)))
+    file.write(str(-angle_glottal_midline))
     file.write("\n")
-
 
 if rotationCorrection:
     # rotate frame to correct glottal orientation
@@ -606,31 +610,14 @@ if rotationCorrection:
     # for all points in list 'glottis_contour'
     for point_ in glottis_contour:
         point = point_[0]
-        # translate point
-        x_point_translated = point[0] - x_center
-        y_point_translated = point[1] - y_center
-        # rotate point
-        point[0] = x_point_translated * math.cos(-angle_glottal_midline) + \
-                   y_point_translated * math.sin(-angle_glottal_midline)
-        point[1] = -x_point_translated * math.sin(-angle_glottal_midline) + \
-                   y_point_translated * math.cos(-angle_glottal_midline)
-        # translate rotated point back
-        point[0] = int(point[0] + x_center)
-        point[1] = int(point[1] + y_center)
-
+        # rotate point around frame center
+        point = segmentation.rotate_point((x_center, y_center), point, -angle_glottal_midline)
     # rotate seed points accordingly
     for seed in seed_points:
-        # translate seed
-        x_seed_translated = seed[0] - x_center
-        y_seed_translated = seed[1] - y_center
-        # rotate seed
-        seed[0] = x_seed_translated * math.cos(-angle_glottal_midline) - \
-                  y_seed_translated * math.sin(-angle_glottal_midline)
-        seed[1] = -x_seed_translated * math.sin(-angle_glottal_midline) + \
-                  y_seed_translated * math.cos(-angle_glottal_midline)
-        # translate rotated seed back
-        seed[0] = int(seed[0] + x_center)
-        seed[1] = int(seed[1] + y_center)
+        # rotate seed around frame center
+        seed = segmentation.rotate_point((x_center, y_center), seed, -angle_glottal_midline)
+    # rotate glottal reference point accordingly
+    ref_rot = segmentation.rotate_point((x_center, y_center), [x, y], -angle_glottal_midline)
 
 # localization of glottal points of interest for calculation of glottal angle
 left_point_glottis, right_point_glottis, left_point_bottom, right_point_bottom = \
@@ -667,18 +654,21 @@ frame_result = cv2.circle(frame_result, (int(right_point_glottis[0]), int(right_
 frame_result = cv2.circle(frame_result, (int(vertex_point[0]), int(vertex_point[1])), 2, [255, 0, 0], -1)
 # draw points for vocal fold edge distance
 frame_result = cv2.circle(frame_result, (int(left_distance_point[0]), int(left_distance_point[1])), 2, [255, 255, 0], -1)
-frame_result = cv2.circle(frame_result, (int(right_distance_point[0]), int(right_distance_point[1])), 2, [255, 255, 0], -1)
+frame_result = cv2.circle(frame_result, (int(right_distance_point[0]), int(right_distance_point[1])),
+                          2, [255, 255, 0], -1)
 # draw lines for glottal angle
 frame_result = cv2.line(frame_result, (int(left_point_glottis[0]), int(left_point_glottis[1])),
                         (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
 frame_result = cv2.line(frame_result, (int(right_point_glottis[0]), int(right_point_glottis[1])),
                         (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
 # draw glottal angle
+axis_angle = vocalfold.getAngleBetweenPoints([0, vertex_point[1]], vertex_point, left_point_glottis)
 frame_result = cv2.ellipse(frame_result,
                            (int(vertex_point[0]), int(vertex_point[1])),
-                           (int((vertex_point[1]-left_point_glottis[1])/2.0),
-                            int((vertex_point[1]-left_point_glottis[1])/2.0)),
-                           -90.0, -glottal_angle/2.0, glottal_angle/2.0, [255, 0, 0], 1)
+                           (int((vertex_point[1] - left_point_glottis[1]) / 2.0),
+                            int((vertex_point[1] - left_point_glottis[1]) / 2.0)), 180.0 + axis_angle, 0.0,
+                           glottal_angle, [255, 0, 0], 1)
+
 # draw line for vocal fold edge distance
 frame_result = cv2.line(frame_result, (int(left_distance_point[0]), int(left_distance_point[1])),
                         (int(right_distance_point[0]), int(right_distance_point[1])), [255, 255, 0], 1)
@@ -691,6 +681,7 @@ display.displayFrame("Segmentation Result (First Frame)", frame_result_large, 0)
 cv2.imwrite(saving_path + patient + "_" + sequence_number + "_Glottal_Segmentation_First_Frame.png", frame_result)
 for i in range(0, 30):
     output_rotation.write(frame_result)
+    output_rot_seg.write(frame_result)
     output_all.write(frame_result)
     i += 1
 output_rotation.release()
@@ -772,15 +763,15 @@ while video.isOpened():
                 # get extremal points on glottis contour (using segmentation result of previous frame)
                 extLeft, extRight, extTop, extBot = segmentation.getExtremePointsContour(glottis_contour)
                 # get rectangular point grid for region growing procedure
-                mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame.shape[1],
-                                                                                frame.shape[0],
+                mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame.shape[0],
+                                                                                frame.shape[1],
                                                                                 extLeft,
                                                                                 extRight,
                                                                                 extTop,
                                                                                 extBot)
                 # get seed point grid for region growing procedure (adapted to glottis contour)
-                seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[1],
-                                                                                frame.shape[0],
+                seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[0],
+                                                                                frame.shape[1],
                                                                                 glottis_contour,
                                                                                 mask_grid_region_growing)
                 # if no seed points available
@@ -876,8 +867,10 @@ while video.isOpened():
 
                         # update horizontal position of vertex point with respect to left and right point
                         if right_point_glottis[0] > left_point_glottis[0]:
-                            vertex_point = [int(left_point_glottis[0] + relative_location_vertex_point_horizontal *
-                                                (right_point_glottis[0] - left_point_glottis[0])), vertex_point[1]]
+                            vertex_point = [int(round(left_point_glottis[0] +
+                                                      relative_location_vertex_point_horizontal *
+                                                      (right_point_glottis[0] - left_point_glottis[0]))),
+                                            vertex_point[1]]
 
                         # calculate glottal angle using three defining points
                         glottal_angle = vocalfold.angle_straight_lines(left_point_glottis, right_point_glottis,
@@ -899,11 +892,12 @@ while video.isOpened():
                         frame = cv2.line(frame, (int(right_point_glottis[0]), int(right_point_glottis[1])),
                                          (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
                         # draw glottal angle
+                        axis_angle = vocalfold.getAngleBetweenPoints([0, vertex_point[1]], vertex_point,
+                                                                     left_point_glottis)
                         frame = cv2.ellipse(frame, (int(vertex_point[0]), int(vertex_point[1])),
-                                            (int((vertex_point[1]-left_point_glottis[1])/2.0),
-                                             int((vertex_point[1]-left_point_glottis[1])/2.0)),
-                                            -90.0, -glottal_angle/2.0, glottal_angle/2.0,
-                                            [255, 0, 0], 1)
+                                            (int((vertex_point[1] - left_point_glottis[1]) / 2.0),
+                                             int((vertex_point[1] - left_point_glottis[1]) / 2.0)),
+                                            180.0 + axis_angle, 0.0, glottal_angle, [255, 0, 0], 1)
                 except:
                     print("pass angle")
 
@@ -947,9 +941,10 @@ while video.isOpened():
             cv2.waitKey(1)
             # save frame showing glottis segmentation result
             output.write(frame)
+            output_rot_seg.write(frame)
             output_all.write(frame)
 output.release()
-output_all.release()
+output_rot_seg.release()
 end = time.time()
 
 # DATA PROCESSING
@@ -1824,7 +1819,8 @@ try:
     plot.plotGLFFitArea(frame_number_list_area, area_list, x_area_glf, y_area_glf, saving_path + patient +
                             "_" + sequence_number + "_Generalized_Logistic_Function_Glottal_Area.png")
 
-    print("Glottal area (generalized logistic function): ", [glf_area_95, glf_area_96, glf_area_97, glf_area_98, glf_area_99])
+    print("Glottal area (generalized logistic function): ", [glf_area_95, glf_area_96, glf_area_97,
+                                                             glf_area_98, glf_area_99])
 
     file.write("Glottal area (generalized logistic function, 95/96/97/98/99% decline)): ")
     file.write(str([glf_area_95, glf_area_96, glf_area_97, glf_area_98, glf_area_99]))
@@ -2065,7 +2061,7 @@ try:
                    str((np.min(area_list)/area_list[0])*100) + "\n\n")
         file.write("Duration of adduction phase in ms (vocal fold edge distance with offset - 98): ")
         file.write(str((frame_number_list_area[np.argmin(area_list)] - sigmoid_distance_98) / 4.0))
-        file.write("\n\n")
+        file.write("\n")
     else:
         file.write("Relative glottal area with respect to initial area in percent: " +
                    str((np.min(area_list)/area_list[0]) * 100) + "\n")
@@ -2103,24 +2099,37 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
     file.write("Glottal closure achieved and glottis open at end of sequence: yes\n\n")
     frame_number = 1
 
-    # apply watershed segmentation with identified hysteresis threshold values on last grayscale frame of orig. sequence
+    # apply watershed segmentation with identified hysteresis threshold values on last grayscale frame of sequence
     label = segmentation.getLabels(frame_gray, low_canny_thresh, high_canny_thresh)
 
     watershed = segmentation.watershed_segmentation(cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2BGR), label)
 
-    index_reference_point = segmentation.segment_glottis_point(watershed, x, y, frame.shape[0], frame.shape[1])
+    # identify segment of watershed transformation result containing reference point
+    if rotationCorrection:
+        index_reference_point = segmentation.segment_glottis_point(watershed, ref_rot[0], ref_rot[1],
+                                                                   frame_gray.shape[0], frame_gray.shape[1])
+    else:
+        index_reference_point = segmentation.segment_glottis_point(watershed, x, y,
+                                                                   frame_gray.shape[0], frame_gray.shape[1])
 
-    glottis_contour_watershed = segmentation.getGlottisContourFromWatershed(frame.shape[1], frame.shape[0],
+    glottis_contour_watershed = segmentation.getGlottisContourFromWatershed(frame_gray.shape[0], frame_gray.shape[1],
                                                                             watershed, index_reference_point)
 
     # region growing (automated)
     extLeft, extRight, extTop, extBot = segmentation.getExtremePointsContour(glottis_contour_watershed)
 
-    mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame.shape[1], frame.shape[0], extLeft, extRight,
-                                                                    extTop, extBot)
+    mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame_gray.shape[0], frame_gray.shape[1],
+                                                                    extLeft, extRight, extTop, extBot)
 
-    seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[1], frame.shape[0],
+    seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame_gray.shape[0], frame_gray.shape[1],
                                                                     glottis_contour_watershed, mask_grid_region_growing)
+
+    # # draw seed points
+    # for seed in seed_points:
+    #     frame = cv2.circle(frame, (int(seed[0]), int(seed[1])), 1, [255, 255, 0], -1)
+    #
+    # # draw contour from watershed
+    # frame = cv2.drawContours(frame, [glottis_contour_watershed], 0, [255, 255, 0], 1)
 
     # calculate homogeneity criterion for region growing procedure
     homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
@@ -2132,6 +2141,11 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
     # let user check segmentation result
     input_user_check = True
     while input_user_check:
+        # # draw original glottal reference point
+        # frame = cv2.circle(frame, (x, y), 2, [0, 0, 255], -1)
+        # # draw rotated glottal reference point
+        # if rotationCorrection:
+        #     frame = cv2.circle(frame, (ref_rot[0], ref_rot[1]), 2, [0, 255, 0], -1)
         frame_contour = display.drawGlottisContour(frame, glottis_contour_region_growing, [0, 0, 255])
         input_user = input("Is the glottis segmentation correct? (y/n)\n")
         if input_user == "n":
@@ -2142,7 +2156,7 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
             cv2.namedWindow('Input Mask', 1)
             cv2.setMouseCallback("Input Mask", callbackMouseClick)
             callback = True
-            while (callback):
+            while callback:
                 cv2.imshow('Input Mask', frame)
                 k = cv2.waitKey(1) & 0xFF
                 if k == ord('y'):
@@ -2221,10 +2235,10 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
                 # get extremal points on glottis contour
                 extLeft, extRight, extTop, extBot = segmentation.getExtremePointsContour(glottis_contour)
                 # get point grid for region growing procedure (rectangular)
-                mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame.shape[1], frame.shape[0],
+                mask_grid_region_growing = segmentation.getGridForRegionGrowing(frame.shape[0], frame.shape[1],
                                                                                 extLeft, extRight, extTop, extBot)
                 # get seed point grid for region growing procedure (adapted to glottis contour)
-                seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[1], frame.shape[0],
+                seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[0], frame.shape[1],
                                                                                 glottis_contour,
                                                                                 mask_grid_region_growing)
             if check_mean < 2:
@@ -2285,18 +2299,23 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
                     # store current glottis segmentation result for comparison with future segmentations
                     glottis_contour_before = glottis_contour
                 frame = cv2.drawContours(frame, [glottis_contour], 0, [0, 255, 0], 1)
+                # write frame to full result sequence
+                output_all.write(frame)
             frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                                        interpolation=cv2.INTER_LINEAR)
             cv2.imshow("Current Segmentation Result", frame_large)
-            output2.write(frame)
             cv2.waitKey(1)
+            # write frame to result sequence for inverse analysis step
+            output2.write(frame)
     if output2:
         output2.release()
+    if output_all:
+        output_all.release()
 
     plot.plotArea(frame_number_list_area, area_list, saving_path + patient + "_" + sequence_number +
                   "_Reverse_Area.png")
 
-    # identify instant with glottis opening in ms
+    # identify instant of glottis opening in ms
     # (time elapsed between last frame and frame with minimum glottal area / frame rate in Hz) * 1000
     glottal_open = (last_frame_number - frame_number_list_area[np.argmin(area_list)])/4.0
     # store duration of closed glottis state in ms
