@@ -66,10 +66,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "05"
-sequence_number = "06"
+patient = "06"
+sequence_number = "04"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 52
+spreadsheet_row = 67
 # selection of glottal orientation correction method (PCA/iterative method)
 mode_orientation_correction = "iterative"
 # use avi file
@@ -357,10 +357,10 @@ while input_user_check:
             k = cv2.waitKey(1) & 0xFF
             if k == ord('y'):
                 seed_points = user.getSeedsFromMask(mask_seeds)
-                # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
+                homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
                 # homogeneity_criteria = segmentation.getHomogeneityCriteriaRefined(frame_gray, seed_points)
                 # fix homogeneity criterion to value (avoid over-segmentation)
-                homogeneity_criterion = 1.02
+                # homogeneity_criterion = 1.02
                 print("Homogeneity criterion: ", homogeneity_criterion)
                 region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
                 # region_growing = segmentation.regionGrowingRefined(frame_gray, seed_points, homogeneity_criteria)
@@ -2163,9 +2163,9 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
                 k = cv2.waitKey(1) & 0xFF
                 if k == ord('y'):
                     seed_points = user.getSeedsFromMask(mask_seeds)
-                    # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
+                    homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
                     # fix homogeneity criterion to value (avoid over-segmentation)
-                    homogeneity_criterion = 1.02
+                    # homogeneity_criterion = 1.02
                     region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
                     glottis_contour = segmentation.getGlottisContourRegionGrowing(region_growing)
                     frame_contour = display.drawGlottisContour(frame_result, glottis_contour, [0, 255, 0])
