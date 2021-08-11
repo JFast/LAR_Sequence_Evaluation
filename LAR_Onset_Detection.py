@@ -67,11 +67,10 @@ def changeMask(x, y):
 
 # PATH DEFINITIONS
 patient = "05"
-sequence_number = "01"
+sequence_number = "03"
 # SPREADSHEET DEFINITIONS
 spreadsheet_row = 52
 # selection of glottal orientation correction method (PCA/iterative method)
-# mode_orientation_correction = "PCA"
 mode_orientation_correction = "iterative"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + patient + "/es_01_pat_" + patient + "_seq_" + sequence_number + \
@@ -360,7 +359,7 @@ while input_user_check:
                 seed_points = user.getSeedsFromMask(mask_seeds)
                 # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
                 # homogeneity_criteria = segmentation.getHomogeneityCriteriaRefined(frame_gray, seed_points)
-                # fix homogeneity criterion to value
+                # fix homogeneity criterion to value (avoid over-segmentation)
                 homogeneity_criterion = 1.02
                 print("Homogeneity criterion: ", homogeneity_criterion)
                 region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
@@ -1087,7 +1086,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=32).value = rmse
+    sheet.cell(row=spreadsheet_row, column=33).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1100,7 +1099,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=33).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=34).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: symm. sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1143,7 +1142,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=34).value = rmse
+    sheet.cell(row=spreadsheet_row, column=35).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1156,7 +1155,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=35).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=36).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: asymmetrical sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1203,7 +1202,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=36).value = rmse
+    sheet.cell(row=spreadsheet_row, column=37).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1216,7 +1215,7 @@ try:
     file.write("\n\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=37).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=38).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: Gompertz-like fit not successful!\n\n")
 
@@ -1261,7 +1260,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=38).value = rmse
+    sheet.cell(row=spreadsheet_row, column=39).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1273,7 +1272,7 @@ try:
     file.write("\n\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=39).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=40).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: cubic polynomial fit not successful!\n\n")
 
@@ -1403,7 +1402,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=40).value = rmse
+    sheet.cell(row=spreadsheet_row, column=41).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1416,7 +1415,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=41).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=42).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (symmetrical sigmoid fit with vertical offset)
@@ -1495,7 +1494,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=42).value = rmse
+    sheet.cell(row=spreadsheet_row, column=43).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1508,7 +1507,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=43).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=44).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (generalized logistic function)
@@ -1587,7 +1586,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=44).value = rmse
+    sheet.cell(row=spreadsheet_row, column=45).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1600,7 +1599,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=45).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=46).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (Gompertz-like function)
@@ -1676,7 +1675,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=46).value = rmse
+    sheet.cell(row=spreadsheet_row, column=47).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1688,7 +1687,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=47).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=48).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITY
     # (cubic fit function)
@@ -1782,7 +1781,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=48).value = rmse
+    sheet.cell(row=spreadsheet_row, column=49).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1794,7 +1793,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=49).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=50).value = error_sum_MAE
 
     # check if vertical offset parameter value below 0.1
     if popt_area_sigmoid_offset[3] < 0.1:
@@ -1841,7 +1840,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=50).value = rmse
+    sheet.cell(row=spreadsheet_row, column=51).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1854,7 +1853,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=51).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=52).value = error_sum_MAE
 
     # if vertical offset of glottal area below 0.1
     if popt_area_glf[3] < 0.1:
@@ -1903,7 +1902,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=52).value = rmse
+    sheet.cell(row=spreadsheet_row, column=53).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1915,7 +1914,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=53).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=54).value = error_sum_MAE
 
     # if vertical offset of glottal area below 0.1
     if popt_area_gompertz[0] < 0.1:
@@ -1961,7 +1960,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=54).value = rmse
+    sheet.cell(row=spreadsheet_row, column=55).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1973,7 +1972,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=55).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=56).value = error_sum_MAE
 except:
     file.write("Glottal area: cubic polynomial fit not successful!\n\n")
 
@@ -2162,7 +2161,7 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.1):
                 if k == ord('y'):
                     seed_points = user.getSeedsFromMask(mask_seeds)
                     # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
-                    # fix homogeneity criterion to value
+                    # fix homogeneity criterion to value (avoid over-segmentation)
                     homogeneity_criterion = 1.02
                     region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
                     glottis_contour = segmentation.getGlottisContourRegionGrowing(region_growing)
