@@ -81,8 +81,7 @@ def cubic(x, a, b, c, d):
     :param d: constant coefficient
     :return: function value
     """
-    y = a * pow(x, 3.0) + b * pow(x, 2.0) + c * x + d
-    return y
+    return a * pow(x, 3.0) + b * pow(x, 2.0) + c * x + d
 
 
 def filtering(signal):
@@ -504,9 +503,22 @@ def getValueCubic(x, y, popt, value):
 def derivativeSigmoid(x, a, b, c):
     """
     - computes derivative of given sigmoid fit function with or without vertical offset
-    :param a: parameter of sigmoid fit function without vertical offset
-    :param b: parameter of sigmoid fit function without vertical offset
-    :param c: parameter of sigmoid fit function without vertical offset
+    :param a: parameter of sigmoid fit function
+    :param b: parameter of sigmoid fit function
+    :param c: parameter of sigmoid fit function
+    :param x: x coordinate value
+    :return: second derivative of sigmoid fit function without vertical offset
+    """
+    return (-a) * b * (np.exp((-b) * (x - c)) / pow(1.0 + np.exp((-b) * (x - c)), 2.0))
+
+
+def derivativeSigmoidVertOffset(x, a, b, c, d):
+    """
+    - computes derivative of given sigmoid fit function with vertical offset
+    :param a: parameter of sigmoid fit function with vertical offset
+    :param b: parameter of sigmoid fit function with vertical offset
+    :param c: parameter of sigmoid fit function with vertical offset
+    :param c: parameter of sigmoid fit function with vertical offset
     :param x: x coordinate value
     :return: second derivative of sigmoid fit function without vertical offset
     """
@@ -563,6 +575,52 @@ def getMaxAngVelocityGeneralizedLogisticFunction(a, b, c, d, nu):
     # print("Frame index with maximum angular velocity (generalized logistic function): ", min_derivative_glf.x)
     max_slope_glf = derivativeGeneralizedLogisticFunction(min_derivative_glf.x)
     return max_slope_glf
+
+
+def derivativeGLF(x, a, b, c, d, nu):
+    """
+    - returns value of derivative of given generalized logistic function at x
+    :param x: x coordinate value
+    :param a: parameter a of generalized logistic function
+    :param b: parameter b of generalized logistic function
+    :param c: parameter c of generalized logistic function
+    :param d: parameter d of generalized logistic function
+    :param nu: parameter nu of generalized logistic function
+    :return: derivative of generalized logistic function at x
+    """
+    return (-a) * b * np.exp((-b) * (x - c)) * pow(1.0 + nu * np.exp((-b) * (x - c)), (((-1.0) - nu) / nu))
+
+
+def derivativeGompertz(x, a, b, c, d):
+    """
+    - returns value of derivative of given Gompertz-like fit function at x
+    :param x: x coordinate value
+    :param a: parameter a of Gompertz-like fit function
+    :param b: parameter b of Gompertz-like fit function
+    :param c: parameter c of Gompertz-like fit function
+    :param d: parameter d of Gompertz-like fit function
+    :return: derivative of Gompertz-like fit function at x
+    """
+    # symbolic calculation of derivatives of Gompertz-like fit function
+    x_symbol_gompertz = sym.Symbol('x_symbol_gompertz')
+    # calculate first derivative
+    diff_gompertz = sym.diff(d + (a - d) * 2.0 ** (-sym.exp((-b) * (x_symbol_gompertz - c))), x_symbol_gompertz)
+    # calculate value of first derivative at x
+    derivative_at_x_gompertz = diff_gompertz.subs(x_symbol_gompertz, x)
+    return derivative_at_x_gompertz
+
+
+def derivativeCubic(x, a, b, c, d):
+    """
+    - returns value of derivative of given cubic fit function at x
+    :param x: x coordinate value
+    :param a: parameter a of cubic fit function
+    :param b: parameter b of cubic fit function
+    :param c: parameter c of cubic fit function
+    :param c: parameter d of cubic fit function
+    :return: derivative of cubic fit function at x
+    """
+    return 3 * a * pow(x, 2.0) + 2 * b * x + c
 
 
 def getMaxAngVelocityGompertz(a, b, c, d):
