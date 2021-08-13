@@ -66,10 +66,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "06"
-sequence_number = "04"
+patient = "05"
+sequence_number = "01"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 67
+spreadsheet_row = 80
 # selection of glottal orientation correction method (PCA/iterative method)
 mode_orientation_correction = "iterative"
 # use avi file
@@ -105,6 +105,8 @@ frame_number = 0
 # declare matrix S of column intensity variation (size not specified)
 intensity_matrix_columns = np.zeros((0, 0))
 
+print("Identification of glottal reference point...")
+
 while video.isOpened():
     # load next frame
     ret, frame = video.read()
@@ -114,7 +116,7 @@ while video.isOpened():
     else:
         # determine current frame number
         frame_number = frame_number + 1
-        print(frame_number)
+        # print(frame_number)
 
         # conversion into V channel of HSV color space and cropping to size of (216x216) px
         frame_v = prepro.convertToVChannel(frame[20:frame.shape[0]-20, 20:frame.shape[1]-20, :])
@@ -196,7 +198,7 @@ while video.isOpened():
     else:
         # determine current frame index
         frame_number = frame_number + 1
-        print(frame_number)
+        # print(frame_number)
 
         # crop frame with boundary values identified during analysis of frame columns
         frame = frame[20:frame.shape[0] - 20, min_boundary_columns:max_boundary_columns]
@@ -712,7 +714,8 @@ area = cv2.contourArea(glottis_contour)
 # initialize counter for number of unsuccessful glottis segmentation attempts
 check_mean = 0
 
-mid_point = left_distance_point[0] + (abs(left_distance_point[0] - right_distance_point[0])/2.0)
+# calculation of central point between left and right point for glottal distance measurement (not in use)
+# mid_point = left_distance_point[0] + (abs(left_distance_point[0] - right_distance_point[0])/2.0)
 
 # initialize glottis contour in last iteration
 glottis_contour_before = glottis_contour
@@ -735,7 +738,7 @@ while video.isOpened():
         frame_list.append(frame)
         # start with frame_number = 2
         frame_number = frame_number + 1
-        print(frame_number)
+        # print(frame_number)
 
         if rotationCorrection:
             # rotate frame to correct glottal orientation
@@ -1327,7 +1330,7 @@ try:
     file.write(str(error_sum_MAE))
     file.write("\n\n")
 
-    # CALCULATION OF MEAN ANGULAR VELOCITY
+    # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (symmetrical sigmoid fit without vertical offset)
 
     # create x values; frame indices span 0 to x_angle_sigmoid[-1]
@@ -1336,13 +1339,25 @@ try:
     # calculate associated function values
     y_angle_sigmoid_mean_calc = fit.sigmoid(x_angle_sigmoid_mean_calc, *popt_angle_sigmoid)
 
+    sigmoid_angle_100 = fit.getValueNoVerticalOffset(x_angle_sigmoid_mean_calc, y_angle_sigmoid_mean_calc,
+                                                     popt_angle_sigmoid, 0.999)
+    sigmoid_angle_80 = fit.getValueNoVerticalOffset(x_angle_sigmoid_mean_calc, y_angle_sigmoid_mean_calc,
+                                                    popt_angle_sigmoid, 0.8)
+
+    print(sigmoid_angle_100)
+    print(sigmoid_angle_80)
+
+    # calculate mean angular velocity at start of adduction in degrees per frame
+    mean_angular_velocity_start = (fit.sigmoid(sigmoid_angle_80, *popt_angle_sigmoid) -
+                             fit.sigmoid(sigmoid_angle_100, *popt_angle_sigmoid)) / (sigmoid_angle_80 -
+                                                                                     sigmoid_angle_100)
+    # convert into degrees per second using known frame rate of 4000 Hz
+    mean_angular_velocity_start *= 4000.0
+
     # if last element of "y_angle_sigmoid" smaller than (0.2*a) of sigmoid fit function
     if y_angle_sigmoid_mean_calc[-1] < popt_angle_sigmoid[0] * 0.2:
-        sigmoid_angle_80 = fit.getValueNoVerticalOffset(x_angle_sigmoid_mean_calc, y_angle_sigmoid_mean_calc,
-                                                        popt_angle_sigmoid, 0.8)
         sigmoid_angle_20 = fit.getValueNoVerticalOffset(x_angle_sigmoid_mean_calc, y_angle_sigmoid_mean_calc,
                                                         popt_angle_sigmoid, 0.2)
-        print(sigmoid_angle_80)
         print(sigmoid_angle_20)
         # calculate mean angular velocity in degrees per frame
         mean_angular_velocity = (fit.sigmoid(sigmoid_angle_20, *popt_angle_sigmoid) -
@@ -1351,12 +1366,21 @@ try:
         # convert into degrees per second using known frame rate of 4000 Hz
         mean_angular_velocity *= 4000.0
     else:
+        file.write("Calculation of mean angular velocity with sigmoid fit not successful "
+                   "(function value not below 20%)!\n\n")
         mean_angular_velocity = None
 
     # CALCULATION OF MAXIMUM ANGULAR VELOCITY (ALWAYS POSSIBLE IF FIT SUCCESSFUL)
     max_angular_velocity_sigmoid_without_vert_offset = fit.getMaxAngVelocitySigmoidNoVertOffset(*popt_angle_sigmoid)
     # convert into degrees per second using known frame rate of 4000 Hz
     max_angular_velocity_sigmoid_without_vert_offset *= 4000.0
+
+    # CALCULATION OF MEAN ANGULAR ACCELERATION AT ONSET OF ADDUCTION
+    mean_ang_accel_sigmoid_without_vert_offset = (fit.derivativeSigmoid(sigmoid_angle_80, *popt_angle_sigmoid) -
+                                                  fit.derivativeSigmoid(sigmoid_angle_100, *popt_angle_sigmoid)) / \
+                                                 (sigmoid_angle_80 - sigmoid_angle_100)
+    # convert into degrees per second^2 using known frame rate of 4000 Hz
+    mean_ang_accel_sigmoid_without_vert_offset *= 4000.0
 
 except:
     file.write("Glottal angle: symmetrical sigmoid fit without vertical offset not successful!\n\n")
@@ -1420,7 +1444,7 @@ try:
     # write MAE value to spreadsheet
     sheet.cell(row=spreadsheet_row, column=43).value = error_sum_MAE
 
-    # CALCULATION OF MEAN ANGULAR VELOCITY
+    # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (symmetrical sigmoid fit with vertical offset)
 
     # create x values; frame indices span 0 to x_angle_sigmoid_offset[-1]
@@ -1430,14 +1454,25 @@ try:
     # calculate associated function values
     y_angle_sigmoid_offset_mean_calc = fit.sigmoid_offset(x_angle_sigmoid_offset_mean_calc, *popt_angle_sigmoid_offset)
 
+    sigmoid_angle_100_offset = fit.getValueWithVerticalOffset(
+        x_angle_sigmoid_offset_mean_calc, y_angle_sigmoid_offset_mean_calc, popt_angle_sigmoid_offset, 0.999)
+    sigmoid_angle_80_offset = fit.getValueWithVerticalOffset(
+        x_angle_sigmoid_offset_mean_calc, y_angle_sigmoid_offset_mean_calc, popt_angle_sigmoid_offset, 0.8)
+
+    print(sigmoid_angle_100_offset)
+    print(sigmoid_angle_80_offset)
+
+    # calculate mean angular velocity at start of adduction in degrees per frame
+    mean_angular_velocity_start_offset = (fit.sigmoid_offset(sigmoid_angle_80_offset, *popt_angle_sigmoid_offset) -
+                                          fit.sigmoid_offset(sigmoid_angle_100_offset, *popt_angle_sigmoid_offset)) / \
+                                         (sigmoid_angle_80_offset - sigmoid_angle_100_offset)
+    # convert into degrees per second using known frame rate of 4000 Hz
+    mean_angular_velocity_start_offset *= 4000.0
+
     if y_angle_sigmoid_offset_mean_calc[-1] < (popt_angle_sigmoid_offset[0] * 0.2) + popt_angle_sigmoid_offset[3]:
-        sigmoid_angle_80_offset = fit.getValueWithVerticalOffset(x_angle_sigmoid_offset_mean_calc,
-                                                                 y_angle_sigmoid_offset_mean_calc,
-                                                                 popt_angle_sigmoid_offset, 0.8)
         sigmoid_angle_20_offset = fit.getValueWithVerticalOffset(x_angle_sigmoid_offset_mean_calc,
                                                                  y_angle_sigmoid_offset_mean_calc,
                                                                  popt_angle_sigmoid_offset, 0.2)
-        print(sigmoid_angle_80_offset)
         print(sigmoid_angle_20_offset)
         # calculate mean angular velocity in degrees per frame
         mean_angular_velocity_offset = (fit.sigmoid_offset(sigmoid_angle_20_offset, *popt_angle_sigmoid_offset) -
@@ -1446,12 +1481,21 @@ try:
         # convert into degrees per second using known frame rate of 4000 Hz
         mean_angular_velocity_offset *= 4000.0
     else:
+        file.write("Calculation of mean angular velocity with sigmoid fit with vertical offset not successful "
+                   "(function value not below 20%)!\n\n")
         mean_angular_velocity_offset = None
 
     # CALCULATION OF MAXIMUM ANGULAR VELOCITY (ALWAYS POSSIBLE IF FIT SUCCESSFUL)
     max_angular_velocity_sigmoid_offset = fit.getMaxAngVelocitySigmoidWithVertOffset(*popt_angle_sigmoid_offset)
     # convert into degrees per second using known frame rate of 4000 Hz
     max_angular_velocity_sigmoid_offset *= 4000.0
+
+    # CALCULATION OF MEAN ANGULAR ACCELERATION AT ONSET OF ADDUCTION
+    mean_ang_accel_sigmoid_offset = (fit.derivativeSigmoidVertOffset(sigmoid_angle_80_offset, *popt_angle_sigmoid_offset) -
+                                     fit.derivativeSigmoidVertOffset(sigmoid_angle_100_offset, *popt_angle_sigmoid_offset)) / \
+                                    (sigmoid_angle_80_offset - sigmoid_angle_100_offset)
+    # convert into degrees per second^2 using known frame rate of 4000 Hz
+    mean_ang_accel_sigmoid_offset *= 4000.0
 except:
     file.write("Glottal angle: symmetrical sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1512,7 +1556,7 @@ try:
     # write MAE value to spreadsheet
     sheet.cell(row=spreadsheet_row, column=45).value = error_sum_MAE
 
-    # CALCULATION OF MEAN ANGULAR VELOCITY
+    # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (generalized logistic function)
 
     # create x values; indices of frames used for fitting span 0 to x_angle_glf[-1]
@@ -1520,13 +1564,26 @@ try:
     # calculate associated function values
     y_angle_glf_mean_calc = fit.generalized_logistic_function(x_angle_glf_mean_calc, *popt_angle_glf)
 
+    angle_100_generalized_logistic_function = fit.getValueWithVerticalOffset(
+        x_angle_glf_mean_calc, y_angle_glf_mean_calc, popt_angle_glf, 0.999)
+    angle_80_generalized_logistic_function = fit.getValueWithVerticalOffset(
+        x_angle_glf_mean_calc, y_angle_glf_mean_calc, popt_angle_glf, 0.8)
+
+    print(angle_100_generalized_logistic_function)
+    print(angle_80_generalized_logistic_function)
+
+    # calculate mean angular velocity at start of adduction in degrees per frame
+    mean_angular_velocity_glf_start = (fit.generalized_logistic_function(
+        angle_80_generalized_logistic_function, *popt_angle_glf) - fit.generalized_logistic_function(
+        angle_100_generalized_logistic_function, *popt_angle_glf)) / (angle_80_generalized_logistic_function -
+                                                                      angle_100_generalized_logistic_function)
+    # convert into degrees per second using known frame rate of 4000 Hz
+    mean_angular_velocity_glf_start *= 4000.0
+
     # if angle decreases to below 20% of function span (a)
     if y_angle_glf_mean_calc[-1] < (popt_angle_glf[0] * 0.2) + popt_angle_glf[3]:
-        angle_80_generalized_logistic_function = fit.getValueWithVerticalOffset(
-            x_angle_glf_mean_calc, y_angle_glf_mean_calc, popt_angle_glf, 0.8)
         angle_20_generalized_logistic_function = fit.getValueWithVerticalOffset(
             x_angle_glf_mean_calc, y_angle_glf_mean_calc, popt_angle_glf, 0.2)
-        print(angle_80_generalized_logistic_function)
         print(angle_20_generalized_logistic_function)
         # declare mean angular velocity in degrees per frame
         mean_angular_velocity_glf = (fit.generalized_logistic_function(angle_20_generalized_logistic_function,
@@ -1538,12 +1595,22 @@ try:
         # convert into degrees per second using known frame rate of 4000 Hz
         mean_angular_velocity_glf *= 4000.0
     else:
+        file.write("Calculation of mean angular velocity with generalized logistic fit not successful "
+                   "(function value not below 20%)!\n\n")
         mean_angular_velocity_glf = None
 
     # CALCULATION OF MAXIMUM ANGULAR VELOCITY (ALWAYS POSSIBLE IF FIT SUCCESSFUL)
     max_angular_velocity_glf = fit.getMaxAngVelocityGeneralizedLogisticFunction(*popt_angle_glf)
     # convert into degrees per second using known frame rate of 4000 Hz
     max_angular_velocity_glf *= 4000.0
+
+    # CALCULATION OF MEAN ANGULAR ACCELERATION AT ONSET OF ADDUCTION
+    mean_ang_accel_glf = (fit.derivativeGLF(angle_80_generalized_logistic_function, *popt_angle_glf) -
+                          fit.derivativeGLF(angle_100_generalized_logistic_function, *popt_angle_glf)) / \
+                         (angle_80_generalized_logistic_function - angle_100_generalized_logistic_function)
+    # convert into degrees per second^2 using known frame rate of 4000 Hz
+    mean_ang_accel_glf *= 4000.0
+
 except:
     file.write("Glottal angle: generalized logistic function fit not successful!\n\n")
 
@@ -1604,7 +1671,7 @@ try:
     # write MAE value to spreadsheet
     sheet.cell(row=spreadsheet_row, column=47).value = error_sum_MAE
 
-    # CALCULATION OF MEAN ANGULAR VELOCITY
+    # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (Gompertz-like function)
 
     # x_angle_gompertz = np.linspace(0, 5000, 5001)
@@ -1614,27 +1681,48 @@ try:
     # calculate associated function values
     y_angle_gompertz_mean_calc = fit.gompertz(x_angle_gompertz_mean_calc, *popt_angle_gompertz)
 
+    angle_100_gompertz = fit.getValueGompertz(x_angle_gompertz_mean_calc, y_angle_gompertz_mean_calc,
+                                              popt_angle_gompertz, 0.999)
+    angle_80_gompertz = fit.getValueGompertz(x_angle_gompertz_mean_calc, y_angle_gompertz_mean_calc,
+                                             popt_angle_gompertz, 0.8)
+
+    print(angle_100_gompertz)
+    print(angle_80_gompertz)
+
+    # calculate mean angular velocity at start of adduction in degrees per frame
+    mean_angular_velocity_gompertz_start = (fit.gompertz(angle_80_gompertz, *popt_angle_gompertz) -
+                                            fit.gompertz(angle_100_gompertz, *popt_angle_gompertz)) / \
+                                           (angle_80_gompertz - angle_100_gompertz)
+    # convert into degrees per second using known frame rate of 4000 Hz
+    mean_angular_velocity_gompertz_start *= 4000.0
+
     # if angle decreases to below 20% of function span (d-a)
     if y_angle_gompertz_mean_calc[-1] < (popt_angle_gompertz[3]-popt_angle_gompertz[0]) * 0.2 + popt_angle_gompertz[0]:
-        angle_80_gompertz = fit.getValueGompertz(x_angle_gompertz_mean_calc, y_angle_gompertz_mean_calc,
-                                                                 popt_angle_gompertz, 0.8)
         angle_20_gompertz = fit.getValueGompertz(x_angle_gompertz_mean_calc, y_angle_gompertz_mean_calc,
                                                                  popt_angle_gompertz, 0.2)
-        print(angle_80_gompertz)
         print(angle_20_gompertz)
         # declare mean angular velocity in degrees per frame
         mean_angular_velocity_gompertz = (fit.gompertz(angle_20_gompertz, *popt_angle_gompertz) -
-                                              fit.gompertz(angle_80_gompertz, *popt_angle_gompertz)) / \
-                                             (angle_20_gompertz - angle_80_gompertz)
+                                          fit.gompertz(angle_80_gompertz, *popt_angle_gompertz)) / (angle_20_gompertz -
+                                                                                                    angle_80_gompertz)
         # convert into degrees per second using known frame rate of 4000 Hz
         mean_angular_velocity_gompertz *= 4000.0
     else:
+        file.write("Calculation of mean angular velocity with Gompertz-like not successful "
+                   "(function value not below 20%)!\n\n")
         mean_angular_velocity_gompertz = None
 
     # CALCULATION OF MAXIMUM ANGULAR VELOCITY (ALWAYS POSSIBLE IF FIT SUCCESSFUL)
     max_angular_velocity_gompertz = fit.getMaxAngVelocityGompertz(*popt_angle_gompertz)
     # convert into degrees per second using known frame rate of 4000 Hz
     max_angular_velocity_gompertz *= 4000.0
+
+    # CALCULATION OF MEAN ANGULAR ACCELERATION AT ONSET OF ADDUCTION
+    mean_ang_accel_gompertz = (fit.derivativeGompertz(angle_80_gompertz, *popt_angle_gompertz) -
+                               fit.derivativeGompertz(angle_100_gompertz, *popt_angle_gompertz)) / \
+                              (angle_80_gompertz - angle_100_gompertz)
+    # convert into degrees per second^2 using known frame rate of 4000 Hz
+    mean_ang_accel_gompertz *= 4000.0
 except:
     file.write("Glottal angle: Gompertz-like function fit not successful!\n\n")
 
@@ -1692,7 +1780,7 @@ try:
     # write MAE value to spreadsheet
     sheet.cell(row=spreadsheet_row, column=49).value = error_sum_MAE
 
-    # CALCULATION OF MEAN ANGULAR VELOCITY
+    # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (cubic fit function)
 
     # create x values; indices of frames used for fitting span 0 to x_angle_cubic[-1]
@@ -1708,12 +1796,23 @@ try:
     file.write(str(roots[1]))
     file.write("\n\n")
 
+    angle_100_cubic = fit.getValueCubic(x_angle_cubic_mean_calc, y_angle_cubic_mean_calc, popt_angle_cubic, 0.999)
+    angle_80_cubic = fit.getValueCubic(x_angle_cubic_mean_calc, y_angle_cubic_mean_calc, popt_angle_cubic, 0.8)
+
+    print(angle_100_cubic)
+    print(angle_80_cubic)
+
+    # calculate mean angular velocity at start of adduction in degrees per frame
+    mean_angular_velocity_cubic_start = (fit.cubic(angle_80_cubic, *popt_angle_cubic) -
+                                         fit.cubic(angle_100_cubic, *popt_angle_cubic)) / \
+                                        (angle_80_cubic - angle_100_cubic)
+    # convert into degrees per second using known frame rate of 4000 Hz
+    mean_angular_velocity_cubic_start *= 4000.0
+
     # if angle decreases to below 20% of function value at rightmost stationary point of cubic fit function
     if y_angle_cubic_mean_calc[-1] < (fit.cubic(np.max(roots), *popt_angle_cubic) * 0.2):
         # determine time stamps of values of interest on cubic fit function
-        angle_80_cubic = fit.getValueCubic(x_angle_cubic_mean_calc, y_angle_cubic_mean_calc, popt_angle_cubic, 0.8)
         angle_20_cubic = fit.getValueCubic(x_angle_cubic_mean_calc, y_angle_cubic_mean_calc, popt_angle_cubic, 0.2)
-        print(angle_80_cubic)
         print(angle_20_cubic)
         # declare mean angular velocity in degrees per frame
         mean_angular_velocity_cubic = (fit.cubic(angle_20_cubic, *popt_angle_cubic) -
@@ -1724,6 +1823,13 @@ try:
         file.write("Calculation of mean angular velocity with cubic fit not successful "
                    "(function value not below 20%)!\n\n")
         mean_angular_velocity_cubic = None
+
+    # CALCULATION OF MEAN ANGULAR ACCELERATION AT ONSET OF ADDUCTION
+    mean_ang_accel_cubic = (fit.derivativeCubic(angle_80_cubic, *popt_angle_cubic) -
+                            fit.derivativeCubic(angle_100_cubic, *popt_angle_cubic)) / \
+                           (angle_80_cubic - angle_100_cubic)
+    # convert into degrees per second^2 using known frame rate of 4000 Hz
+    mean_ang_accel_cubic *= 4000.0
 except:
     file.write("Glottal angle: cubic polynomial fit not successful!\n\n")
 
@@ -2037,15 +2143,37 @@ try:
     else:
         file.write("Pre-closed glottis: no\n\n")
 
-    file.write("Avg. angular velocity of adduction (sigmoid without offset) in degrees/s: " +
+    file.write("Avg. angular acceleration at 100%-80% of adduction (sigmoid without offset) in degrees/s^2: " +
+               str(mean_ang_accel_sigmoid_without_vert_offset) + "\n")
+    file.write("Avg. angular acceleration at 100%-80% of adduction (sigmoid with offset) in degrees/s^2: " +
+               str(mean_ang_accel_sigmoid_offset) + "\n")
+    file.write("Avg. angular acceleration at 100%-80% of adduction (generalized logistic function) in degrees/s^2: " +
+               str(mean_ang_accel_glf) + "\n")
+    file.write("Avg. angular acceleration at 100%-80% of adduction (Gompertz-like function) in degrees/s^2: " +
+               str(mean_ang_accel_gompertz) + "\n")
+    file.write("Avg. angular acceleration at 100%-80% of adduction (cubic fit function) in degrees/s^2: " +
+               str(mean_ang_accel_cubic) + "\n\n")
+
+    file.write("Avg. angular velocity of adduction (sigmoid without offset) in degrees/s (100%-80%): " +
+               str(mean_angular_velocity_start) + "\n")
+    file.write("Avg. angular velocity of adduction (sigmoid with offset) in degrees/s (100%-80%): " +
+               str(mean_angular_velocity_start_offset) + "\n")
+    file.write("Avg. angular velocity of adduction (generalized logistic function) in degrees/s (100%-80%): " +
+               str(mean_angular_velocity_glf_start) + "\n")
+    file.write("Avg. angular velocity of adduction (Gompertz-like function) in degrees/s (100%-80%): " +
+               str(mean_angular_velocity_gompertz_start) + "\n")
+    file.write("Avg. angular velocity of adduction (cubic fit function) in degrees/s (100%-80%): " +
+               str(mean_angular_velocity_cubic_start) + "\n\n")
+
+    file.write("Avg. angular velocity of adduction (sigmoid without offset) in degrees/s (80%-20%): " +
                str(mean_angular_velocity) + "\n")
-    file.write("Avg. angular velocity of adduction (sigmoid with offset) in degrees/s: " +
+    file.write("Avg. angular velocity of adduction (sigmoid with offset) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_offset) + "\n")
-    file.write("Avg. angular velocity of adduction (generalized logistic function) in degrees/s: " +
+    file.write("Avg. angular velocity of adduction (generalized logistic function) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_glf) + "\n")
-    file.write("Avg. angular velocity of adduction (Gompertz-like function) in degrees/s: " +
+    file.write("Avg. angular velocity of adduction (Gompertz-like function) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_gompertz) + "\n")
-    file.write("Avg. angular velocity of adduction (cubic fit function) in degrees/s: " +
+    file.write("Avg. angular velocity of adduction (cubic fit function) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_cubic) + "\n\n")
 
     file.write("Max. angular velocity of adduction (sigmoid without offset) in degrees/s: " +
@@ -2142,6 +2270,10 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
 
     # let user check segmentation result
     input_user_check = True
+    # instantiate new VideoWriter object
+    output2 = cv2.VideoWriter(
+        saving_path + patient + "_" + sequence_number + '_segmentation_result_reverse.mp4',
+        cv2.VideoWriter_fourcc(*"mp4v"), 15.0, (256, 256))
     while input_user_check:
         # # draw original glottal reference point
         # frame = cv2.circle(frame, (x, y), 2, [0, 0, 255], -1)
@@ -2173,10 +2305,6 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
             input_user_check = False
             cv2.imwrite(saving_path + patient + "_" + sequence_number + "_Glottal_Segmentation_First_Frame_Reverse.png",
                         frame_contour)
-            # instantiate new VideoWriter object
-            output2 = cv2.VideoWriter(
-                saving_path + patient + "_" + sequence_number + '_segmentation_result_reverse.mp4',
-                cv2.VideoWriter_fourcc(*"mp4v"), 15.0, (256, 256))
         elif input_user == "y":
             input_user_check = False
             glottis_contour = glottis_contour_region_growing
@@ -2186,10 +2314,6 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
             file.write("\n\n")
             cv2.imwrite(saving_path + patient + "_" + sequence_number + "_Glottal_Segmentation_First_Frame_Reverse.png",
                         frame_contour)
-            # instantiate new VideoWriter object
-            output2 = cv2.VideoWriter(
-                saving_path + patient + "_" + sequence_number + '_segmentation_result_reverse.mp4',
-                cv2.VideoWriter_fourcc(*"mp4v"), 15.0, (256, 256))
         else:
             print("Input faulty!")
 
@@ -2212,7 +2336,7 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
     for frame in frame_list:
         # start with frame_number = 2
         frame_number = frame_number + 1
-        print(frame_number)
+        # print(frame_number)
 
         if rotationCorrection:
             # rotate frame to correct glottal orientation
@@ -2336,10 +2460,14 @@ else:
     # close all windows
     display.destroyWindows()
 try:
+    output2
+except NameError:
+    pass
+else:
     output2.release()
-except:
-    pass
 try:
-    output_all.release()
-except:
+    output_all
+except NameError:
     pass
+else:
+    output_all.release()
