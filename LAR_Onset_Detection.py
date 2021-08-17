@@ -67,10 +67,10 @@ def changeMask(x, y):
 
 # PATH DEFINITIONS
 patient = "05"
-sequence_number = "01"
+sequence_number = "02"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 80
-# selection of glottal orientation correction method (PCA/iterative method)
+spreadsheet_row = 52
+# selection of glottal orientation correction method ('PCA' or 'iterative' method)
 mode_orientation_correction = "iterative"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + patient + "/es_01_pat_" + patient + "_seq_" + sequence_number + \
@@ -87,7 +87,8 @@ spreadsheet_path = 'F:/Masterarbeit_Andra_Oltmann/Results_TMI/Overview_Evaluatio
 
 # open spreadsheet
 spreadsheet = pxl.load_workbook(spreadsheet_path)
-sheet = spreadsheet["Overview"]
+sheet = spreadsheet["Fit Comparison"]
+sheet_overview = spreadsheet["Overview"]
 
 file = open(saving_path + patient + "_" + sequence_number + "_Evaluation.txt", "w")
 file.write("GENERAL INFORMATION\n")
@@ -135,6 +136,7 @@ while video.isOpened():
         frame_v_large = cv2.resize(frame_v, (int(2.0 * frame_v.shape[1]), int(2.0 * frame_v.shape[0])),
                                    interpolation=cv2.INTER_LINEAR)
         display.displayFrame("Current Frame", frame_v_large, 1)
+        cv2.setWindowProperty("Current Frame", cv2.WND_PROP_TOPMOST, 1)
 
 # calculate average intensity differences along frame columns over all frames (yields row vector)
 average_intensity = reference.calculateAverageIntensity(intensity_matrix_columns)
@@ -219,6 +221,7 @@ while video.isOpened():
         frame_v_large = cv2.resize(frame_v, (int(2.0 * frame_v.shape[1]), int(2.0 * frame_v.shape[0])),
                                    interpolation=cv2.INTER_LINEAR)
         display.displayFrame("Current Frame", frame_v_large, 1)
+        cv2.setWindowProperty("Current Frame", cv2.WND_PROP_TOPMOST, 1)
 
 # calculate average intensity differences along frame rows over all frames (yields row vector)
 average_intensity = reference.calculateAverageIntensity(intensity_matrix_rows)
@@ -262,7 +265,19 @@ ret, frame = video.read()
 # show reference point identification result
 display.displayReferencePoint(frame, x, y, [0, 0, 255], saving_path + patient + "_" + sequence_number +
                               "_Reference_Point_First_Frame.png")
-
+input_user = input("Is reference point located inside of glottis boundaries? (y/n)\n")
+if input_user == "y":
+    sheet.cell(row=spreadsheet_row, column=5).value = "yes"
+    sheet.cell(row=spreadsheet_row, column=6).value = "no"
+    sheet_overview.cell(row=spreadsheet_row, column=27).value = "yes"
+    sheet_overview.cell(row=spreadsheet_row, column=28).value = "no"
+elif input_user == "n":
+    sheet.cell(row=spreadsheet_row, column=5).value = "no"
+    sheet.cell(row=spreadsheet_row, column=6).value = "yes"
+    sheet_overview.cell(row=spreadsheet_row, column=27).value = "no"
+    sheet_overview.cell(row=spreadsheet_row, column=28).value = "yes"
+else:
+    print("Input faulty!")
 # close all windows
 display.destroyWindows()
 
@@ -347,6 +362,9 @@ while input_user_check:
         frame_contour = display.drawGlottisContour(frame, glottis_contour_region_growing, [0, 0, 255])
         input_user = input("Is the glottis segmentation correct? (y/n)\n")
     if input_user == "n":
+        # save need for user interaction to spreadsheed
+        sheet.cell(row=spreadsheet_row, column=6).value = "yes"
+        sheet_overview.cell(row=spreadsheet_row, column=28).value = "yes"
         frame_result = frame.copy()
         mask_user = user.getMaskForUser(frame.shape[0], frame.shape[1])
         mask_seeds = np.zeros((frame.shape[0], frame.shape[1])).astype('uint8')
@@ -468,6 +486,7 @@ elif mode_orientation_correction == "iterative":
               relative_location_vertex_point_horizontal_iterative)
         # create window for display of rotated frame and glottis contour
         cv2.namedWindow("Rotated frame and glottis contour", cv2.WINDOW_AUTOSIZE)
+        cv2.setWindowProperty("Rotated frame and glottis contour", cv2.WND_PROP_TOPMOST, 1)
         # if vertex located closer to left point on vocal fold edge
         if relative_location_vertex_point_horizontal_iterative < 0.48:
             # decrement glottal midline inclination angle in degrees
@@ -555,6 +574,11 @@ print("Rotation correction effective/glottal midline oriented vertically? Press 
       "'m' for manual rotation angle adjustment. Any other input: accept identified rotation angle.")
 k = cv2.waitKey(0) & 0xFF
 if k == ord('n'):
+    # save unsuccessful rotation correction to spreadsheet
+    sheet.cell(row=spreadsheet_row, column=10).value = "no"
+    sheet.cell(row=spreadsheet_row, column=6).value = "yes"
+    sheet_overview.cell(row=spreadsheet_row, column=32).value = "no"
+    sheet_overview.cell(row=spreadsheet_row, column=28).value = "yes"
     # update Boolean variable for rotation correction
     rotationCorrection = False
     # close window
@@ -564,6 +588,11 @@ if k == ord('n'):
     file.write(str(0))
     file.write("\n")
 elif k == ord('m'):
+    # save unsuccessful rotation correction to spreadsheet
+    sheet.cell(row=spreadsheet_row, column=10).value = "no"
+    sheet.cell(row=spreadsheet_row, column=6).value = "yes"
+    sheet_overview.cell(row=spreadsheet_row, column=32).value = "no"
+    sheet_overview.cell(row=spreadsheet_row, column=28).value = "yes"
     # close window
     cv2.destroyWindow("First Frame (Rotated)")
     # manual rotation angle adjustment
@@ -596,6 +625,11 @@ elif k == ord('m'):
     # update Boolean variable for rotation correction
     rotationCorrection = True
 else:
+    # save successful rotation correction to spreadsheet
+    sheet.cell(row=spreadsheet_row, column=10).value = "yes"
+    sheet.cell(row=spreadsheet_row, column=6).value = "no"
+    sheet_overview.cell(row=spreadsheet_row, column=32).value = "yes"
+    sheet_overview.cell(row=spreadsheet_row, column=28).value = "no"
     # update Boolean variable for rotation correction
     rotationCorrection = True
     # close window
@@ -622,6 +656,10 @@ if rotationCorrection:
         seed = segmentation.rotate_point((x_center, y_center), seed, -angle_glottal_midline)
     # rotate glottal reference point accordingly
     ref_rot = segmentation.rotate_point((x_center, y_center), [x, y], -angle_glottal_midline)
+    # rotate glottal centroid accordingly
+    centroid_rot = segmentation.rotate_point((x_center, y_center), [cx, cy], -angle_glottal_midline)
+    cx = centroid_rot[0]
+    cy = centroid_rot[1]
 
 # localization of glottal points of interest for calculation of glottal angle
 left_point_glottis, right_point_glottis, left_point_bottom, right_point_bottom = \
@@ -1092,7 +1130,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=34).value = rmse
+    sheet.cell(row=spreadsheet_row, column=12).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1105,7 +1143,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=35).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=13).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: symm. sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1148,7 +1186,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=36).value = rmse
+    sheet.cell(row=spreadsheet_row, column=14).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1161,7 +1199,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=37).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=15).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: asymmetrical sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1208,7 +1246,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=38).value = rmse
+    sheet.cell(row=spreadsheet_row, column=16).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1221,7 +1259,7 @@ try:
     file.write("\n\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=39).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=17).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: Gompertz-like fit not successful!\n\n")
 
@@ -1266,7 +1304,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=40).value = rmse
+    sheet.cell(row=spreadsheet_row, column=18).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1278,7 +1316,7 @@ try:
     file.write("\n\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=41).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=19).value = error_sum_MAE
 except:
     file.write("Vocal fold edge distance: cubic polynomial fit not successful!\n\n")
 
@@ -1380,7 +1418,7 @@ try:
                                                   fit.derivativeSigmoid(sigmoid_angle_100, *popt_angle_sigmoid)) / \
                                                  (sigmoid_angle_80 - sigmoid_angle_100)
     # convert into degrees per second^2 using known frame rate of 4000 Hz
-    mean_ang_accel_sigmoid_without_vert_offset *= 4000.0
+    mean_ang_accel_sigmoid_without_vert_offset *= 16000000.0
 
 except:
     file.write("Glottal angle: symmetrical sigmoid fit without vertical offset not successful!\n\n")
@@ -1429,7 +1467,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=42).value = rmse
+    sheet.cell(row=spreadsheet_row, column=20).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1442,7 +1480,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=43).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=21).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (symmetrical sigmoid fit with vertical offset)
@@ -1491,11 +1529,13 @@ try:
     max_angular_velocity_sigmoid_offset *= 4000.0
 
     # CALCULATION OF MEAN ANGULAR ACCELERATION AT ONSET OF ADDUCTION
-    mean_ang_accel_sigmoid_offset = (fit.derivativeSigmoidVertOffset(sigmoid_angle_80_offset, *popt_angle_sigmoid_offset) -
-                                     fit.derivativeSigmoidVertOffset(sigmoid_angle_100_offset, *popt_angle_sigmoid_offset)) / \
+    mean_ang_accel_sigmoid_offset = (fit.derivativeSigmoidVertOffset(sigmoid_angle_80_offset,
+                                                                     *popt_angle_sigmoid_offset) -
+                                     fit.derivativeSigmoidVertOffset(sigmoid_angle_100_offset,
+                                                                     *popt_angle_sigmoid_offset)) / \
                                     (sigmoid_angle_80_offset - sigmoid_angle_100_offset)
     # convert into degrees per second^2 using known frame rate of 4000 Hz
-    mean_ang_accel_sigmoid_offset *= 4000.0
+    mean_ang_accel_sigmoid_offset *= 16000000.0
 except:
     file.write("Glottal angle: symmetrical sigmoid fit with vertical offset not successful!\n\n")
 
@@ -1541,7 +1581,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=44).value = rmse
+    sheet.cell(row=spreadsheet_row, column=22).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1554,7 +1594,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=45).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=23).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (generalized logistic function)
@@ -1609,7 +1649,7 @@ try:
                           fit.derivativeGLF(angle_100_generalized_logistic_function, *popt_angle_glf)) / \
                          (angle_80_generalized_logistic_function - angle_100_generalized_logistic_function)
     # convert into degrees per second^2 using known frame rate of 4000 Hz
-    mean_ang_accel_glf *= 4000.0
+    mean_ang_accel_glf *= 16000000.0
 
 except:
     file.write("Glottal angle: generalized logistic function fit not successful!\n\n")
@@ -1656,7 +1696,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=46).value = rmse
+    sheet.cell(row=spreadsheet_row, column=24).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1669,7 +1709,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=47).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=25).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (Gompertz-like function)
@@ -1722,7 +1762,7 @@ try:
                                fit.derivativeGompertz(angle_100_gompertz, *popt_angle_gompertz)) / \
                               (angle_80_gompertz - angle_100_gompertz)
     # convert into degrees per second^2 using known frame rate of 4000 Hz
-    mean_ang_accel_gompertz *= 4000.0
+    mean_ang_accel_gompertz *= 16000000.0
 except:
     file.write("Glottal angle: Gompertz-like function fit not successful!\n\n")
 
@@ -1766,7 +1806,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=48).value = rmse
+    sheet.cell(row=spreadsheet_row, column=26).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1778,7 +1818,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=49).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=27).value = error_sum_MAE
 
     # CALCULATION OF MEAN ANGULAR VELOCITIES
     # (cubic fit function)
@@ -1829,7 +1869,7 @@ try:
                             fit.derivativeCubic(angle_100_cubic, *popt_angle_cubic)) / \
                            (angle_80_cubic - angle_100_cubic)
     # convert into degrees per second^2 using known frame rate of 4000 Hz
-    mean_ang_accel_cubic *= 4000.0
+    mean_ang_accel_cubic *= 16000000.0
 except:
     file.write("Glottal angle: cubic polynomial fit not successful!\n\n")
 
@@ -1890,7 +1930,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=50).value = rmse
+    sheet.cell(row=spreadsheet_row, column=28).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1902,7 +1942,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=51).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=29).value = error_sum_MAE
 
     # check if vertical offset parameter value below 0.1
     if popt_area_sigmoid_offset[3] < 0.1:
@@ -1949,7 +1989,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=52).value = rmse
+    sheet.cell(row=spreadsheet_row, column=30).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -1962,7 +2002,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=53).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=31).value = error_sum_MAE
 
     # if vertical offset of glottal area below 0.1
     if popt_area_glf[3] < 0.1:
@@ -2011,7 +2051,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=54).value = rmse
+    sheet.cell(row=spreadsheet_row, column=32).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -2023,7 +2063,7 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=55).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=33).value = error_sum_MAE
 
     # if vertical offset of glottal area below 0.1
     if popt_area_gompertz[0] < 0.1:
@@ -2069,7 +2109,7 @@ try:
     file.write("\n")
 
     # write RMSE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=56).value = rmse
+    sheet.cell(row=spreadsheet_row, column=34).value = rmse
 
     # calculate MAE
     error_sum_MAE = 0
@@ -2081,12 +2121,9 @@ try:
     file.write("\n\n")
 
     # write MAE value to spreadsheet
-    sheet.cell(row=spreadsheet_row, column=57).value = error_sum_MAE
+    sheet.cell(row=spreadsheet_row, column=35).value = error_sum_MAE
 except:
     file.write("Glottal area: cubic polynomial fit not successful!\n\n")
-
-# save spreadsheet file
-spreadsheet.save(filename=spreadsheet_path)
 
 # LINEAR FIT (NOT USED FOR EVALUATION)
 try:
@@ -2185,11 +2222,40 @@ try:
     file.write("Max. angular velocity of adduction (Gompertz-like function) in degrees/s: " +
                str(max_angular_velocity_gompertz) + "\n\n")
 
+    sheet_overview.cell(row=spreadsheet_row, column=34).value = mean_ang_accel_sigmoid_without_vert_offset
+    sheet_overview.cell(row=spreadsheet_row, column=35).value = mean_ang_accel_sigmoid_offset
+    sheet_overview.cell(row=spreadsheet_row, column=36).value = mean_ang_accel_glf
+
+    sheet_overview.cell(row=spreadsheet_row, column=37).value = mean_ang_accel_gompertz
+
+    sheet_overview.cell(row=spreadsheet_row, column=38).value = mean_ang_accel_cubic
+
+    sheet_overview.cell(row=spreadsheet_row, column=39).value = mean_angular_velocity_start
+    sheet_overview.cell(row=spreadsheet_row, column=40).value = mean_angular_velocity_start_offset
+    sheet_overview.cell(row=spreadsheet_row, column=41).value = mean_angular_velocity_glf_start
+    sheet_overview.cell(row=spreadsheet_row, column=42).value = mean_angular_velocity_gompertz_start
+    sheet_overview.cell(row=spreadsheet_row, column=43).value = mean_angular_velocity_cubic_start
+
+    sheet_overview.cell(row=spreadsheet_row, column=44).value = mean_angular_velocity
+    sheet_overview.cell(row=spreadsheet_row, column=45).value = mean_angular_velocity_offset
+    sheet_overview.cell(row=spreadsheet_row, column=46).value = mean_angular_velocity_glf
+    sheet_overview.cell(row=spreadsheet_row, column=47).value = mean_angular_velocity_gompertz
+    sheet_overview.cell(row=spreadsheet_row, column=48).value = mean_angular_velocity_cubic
+
+    sheet_overview.cell(row=spreadsheet_row, column=49).value = max_angular_velocity_sigmoid_without_vert_offset
+    sheet_overview.cell(row=spreadsheet_row, column=50).value = max_angular_velocity_sigmoid_offset
+    sheet_overview.cell(row=spreadsheet_row, column=51).value = max_angular_velocity_glf
+    sheet_overview.cell(row=spreadsheet_row, column=52).value = max_angular_velocity_gompertz
+
+    # save spreadsheet file
+    spreadsheet.save(filename=spreadsheet_path)
+
     # check if vertical offset parameter value below 0.1
     if popt_area_sigmoid_offset[3] < 0.1:
         file.write("Minimum relative glottal area with respect to initial area in percent: " +
                    str((np.min(area_list)/area_list[0])*100) + "\n\n")
-        file.write("Duration of adduction phase in ms (vocal fold edge distance with offset - 98): ")
+        file.write("Duration of adduction phase in ms (vocal fold edge distance with offset - 98 up to instant of "
+                   "minimum glottal area): ")
         file.write(str((frame_number_list_area[np.argmin(area_list)] - sigmoid_distance_98) / 4.0))
         file.write("\n")
     else:
@@ -2202,11 +2268,9 @@ except:
 cv2.destroyAllWindows()
 
 # list for inverse video playback
-# remove last frame from list
-# frame_list.pop()
 # reverse order of (original) frames in list
 frame_list.reverse()
-# set last_frame_number to last frame in sequence (before application of .pop())
+# set last_frame_number to last frame in sequence
 last_frame_number = frame_number
 
 # identify instant with closed glottis/minimum glottis opening in ms
@@ -2283,6 +2347,9 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
         frame_contour = display.drawGlottisContour(frame, glottis_contour_region_growing, [0, 0, 255])
         input_user = input("Is the glottis segmentation correct? (y/n)\n")
         if input_user == "n":
+            # save need for user interaction to spreadsheed
+            sheet.cell(row=spreadsheet_row, column=6).value = "yes"
+            sheet_overview.cell(row=spreadsheet_row, column=28).value = "yes"
             frame_result = frame.copy()
             mask_user = user.getMaskForUser(frame.shape[0], frame.shape[1])
             mask_seeds = np.zeros((frame.shape[0], frame.shape[1])).astype('uint8')
@@ -2306,6 +2373,7 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
             cv2.imwrite(saving_path + patient + "_" + sequence_number + "_Glottal_Segmentation_First_Frame_Reverse.png",
                         frame_contour)
         elif input_user == "y":
+            print("Reverse analysis...")
             input_user_check = False
             glottis_contour = glottis_contour_region_growing
             frame_contour = cv2.drawContours(frame, [glottis_contour_region_growing], 0, [0, 255, 0], 1)
@@ -2471,3 +2539,6 @@ except NameError:
     pass
 else:
     output_all.release()
+
+# save spreadsheet file
+spreadsheet.save(filename=spreadsheet_path)

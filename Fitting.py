@@ -606,8 +606,8 @@ def derivativeGompertz(x, a, b, c, d):
     # calculate first derivative
     diff_gompertz = sym.diff(d + (a - d) * 2.0 ** (-sym.exp((-b) * (x_symbol_gompertz - c))), x_symbol_gompertz)
     # calculate value of first derivative at x
-    derivative_at_x_gompertz = diff_gompertz.subs(x_symbol_gompertz, x)
-    return derivative_at_x_gompertz
+    derivative_at_x_gompertz = diff_gompertz.evalf(subs={x_symbol_gompertz: x})
+    return float(derivative_at_x_gompertz)
 
 
 def derivativeCubic(x, a, b, c, d):
@@ -638,16 +638,14 @@ def getMaxAngVelocityGompertz(a, b, c, d):
     diff_gompertz = sym.diff(d + (a - d) * 2.0**(-sym.exp((-b) * (x_symbol_gompertz - c))), x_symbol_gompertz)
     # second derivative (to find location of maximum slope in fit function)
     diff2_gompertz = sym.diff(d + (a - d) * 2.0**(-sym.exp((-b) * (x_symbol_gompertz - c))), x_symbol_gompertz, 2)
-    # print("diff_gompertz: ", diff_gompertz)
-    # print("diff2_gompertz: ", diff2_gompertz)
 
     # find root of second derivative
     roots_gompertz = sym.solveset(diff2_gompertz, x_symbol_gompertz)
     # print("Roots of diff2_gompertz: ", roots_gompertz)
 
     # calculate maximum slope at root of second derivative
-    max_slope_gompertz = diff_gompertz.subs(x_symbol_gompertz, roots_gompertz.args[0])
-    return max_slope_gompertz
+    max_slope_gompertz = diff_gompertz.evalf(subs={x_symbol_gompertz: roots_gompertz.args[0]})
+    return float(max_slope_gompertz)
 
 
 def getRMSE(fit_type, frame_list, data_list, last_index_fit, popt):
