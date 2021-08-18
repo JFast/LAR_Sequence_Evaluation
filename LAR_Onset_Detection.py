@@ -66,10 +66,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "05"
-sequence_number = "02"
+patient = "03"
+sequence_number = "05"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 52
+spreadsheet_row = 31
 # selection of glottal orientation correction method ('PCA' or 'iterative' method)
 mode_orientation_correction = "iterative"
 # use avi file
@@ -369,7 +369,8 @@ while input_user_check:
         mask_user = user.getMaskForUser(frame.shape[0], frame.shape[1])
         mask_seeds = np.zeros((frame.shape[0], frame.shape[1])).astype('uint8')
         frame[mask_user == 255] = [0, 0, 255]
-        cv2.namedWindow('Input Mask', 1)
+        cv2.namedWindow("Input Mask", 1)
+        cv2.setWindowProperty("Input Mask", cv2.WND_PROP_TOPMOST, 1)
         cv2.setMouseCallback("Input Mask", callbackMouseClick)
         callback = True
         while callback:
@@ -627,9 +628,9 @@ elif k == ord('m'):
 else:
     # save successful rotation correction to spreadsheet
     sheet.cell(row=spreadsheet_row, column=10).value = "yes"
-    sheet.cell(row=spreadsheet_row, column=6).value = "no"
+    # sheet.cell(row=spreadsheet_row, column=6).value = "no"
     sheet_overview.cell(row=spreadsheet_row, column=32).value = "yes"
-    sheet_overview.cell(row=spreadsheet_row, column=28).value = "no"
+    # sheet_overview.cell(row=spreadsheet_row, column=28).value = "no"
     # update Boolean variable for rotation correction
     rotationCorrection = True
     # close window
@@ -705,11 +706,12 @@ frame_result = cv2.line(frame_result, (int(right_point_glottis[0]), int(right_po
                         (int(vertex_point[0]), int(vertex_point[1])), [255, 0, 0], 1)
 # draw glottal angle
 axis_angle = vocalfold.getAngleBetweenPoints([0, vertex_point[1]], vertex_point, left_point_glottis)
-frame_result = cv2.ellipse(frame_result,
-                           (int(vertex_point[0]), int(vertex_point[1])),
-                           (int((vertex_point[1] - left_point_glottis[1]) / 2.0),
-                            int((vertex_point[1] - left_point_glottis[1]) / 2.0)), 180.0 + axis_angle, 0.0,
-                           glottal_angle, [255, 0, 0], 1)
+if int((vertex_point[1] - left_point_glottis[1]) / 2.0) > 0:
+    frame_result = cv2.ellipse(frame_result,
+                               (int(vertex_point[0]), int(vertex_point[1])),
+                               (int((vertex_point[1] - left_point_glottis[1]) / 2.0),
+                                int((vertex_point[1] - left_point_glottis[1]) / 2.0)), 180.0 + axis_angle, 0.0,
+                               glottal_angle, [255, 0, 0], 1)
 
 # draw line for vocal fold edge distance
 frame_result = cv2.line(frame_result, (int(left_distance_point[0]), int(left_distance_point[1])),
@@ -937,10 +939,11 @@ while video.isOpened():
                         # draw glottal angle
                         axis_angle = vocalfold.getAngleBetweenPoints([0, vertex_point[1]], vertex_point,
                                                                      left_point_glottis)
-                        frame = cv2.ellipse(frame, (int(vertex_point[0]), int(vertex_point[1])),
-                                            (int((vertex_point[1] - left_point_glottis[1]) / 2.0),
-                                             int((vertex_point[1] - left_point_glottis[1]) / 2.0)),
-                                            180.0 + axis_angle, 0.0, glottal_angle, [255, 0, 0], 1)
+                        if int((vertex_point[1] - left_point_glottis[1]) / 2.0) > 0:
+                            frame = cv2.ellipse(frame, (int(vertex_point[0]), int(vertex_point[1])),
+                                                (int((vertex_point[1] - left_point_glottis[1]) / 2.0),
+                                                 int((vertex_point[1] - left_point_glottis[1]) / 2.0)),
+                                                180.0 + axis_angle, 0.0, glottal_angle, [255, 0, 0], 1)
                 except:
                     print("pass angle")
 
@@ -2182,69 +2185,63 @@ try:
 
     file.write("Avg. angular acceleration at 100%-80% of adduction (sigmoid without offset) in degrees/s^2: " +
                str(mean_ang_accel_sigmoid_without_vert_offset) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=34).value = mean_ang_accel_sigmoid_without_vert_offset
     file.write("Avg. angular acceleration at 100%-80% of adduction (sigmoid with offset) in degrees/s^2: " +
                str(mean_ang_accel_sigmoid_offset) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=35).value = mean_ang_accel_sigmoid_offset
     file.write("Avg. angular acceleration at 100%-80% of adduction (generalized logistic function) in degrees/s^2: " +
                str(mean_ang_accel_glf) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=36).value = mean_ang_accel_glf
     file.write("Avg. angular acceleration at 100%-80% of adduction (Gompertz-like function) in degrees/s^2: " +
                str(mean_ang_accel_gompertz) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=37).value = mean_ang_accel_gompertz
     file.write("Avg. angular acceleration at 100%-80% of adduction (cubic fit function) in degrees/s^2: " +
                str(mean_ang_accel_cubic) + "\n\n")
+    sheet_overview.cell(row=spreadsheet_row, column=38).value = mean_ang_accel_cubic
 
     file.write("Avg. angular velocity of adduction (sigmoid without offset) in degrees/s (100%-80%): " +
                str(mean_angular_velocity_start) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=39).value = mean_angular_velocity_start
     file.write("Avg. angular velocity of adduction (sigmoid with offset) in degrees/s (100%-80%): " +
                str(mean_angular_velocity_start_offset) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=40).value = mean_angular_velocity_start_offset
     file.write("Avg. angular velocity of adduction (generalized logistic function) in degrees/s (100%-80%): " +
                str(mean_angular_velocity_glf_start) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=41).value = mean_angular_velocity_glf_start
     file.write("Avg. angular velocity of adduction (Gompertz-like function) in degrees/s (100%-80%): " +
                str(mean_angular_velocity_gompertz_start) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=42).value = mean_angular_velocity_gompertz_start
     file.write("Avg. angular velocity of adduction (cubic fit function) in degrees/s (100%-80%): " +
                str(mean_angular_velocity_cubic_start) + "\n\n")
+    sheet_overview.cell(row=spreadsheet_row, column=43).value = mean_angular_velocity_cubic_start
 
     file.write("Avg. angular velocity of adduction (sigmoid without offset) in degrees/s (80%-20%): " +
                str(mean_angular_velocity) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=44).value = mean_angular_velocity
     file.write("Avg. angular velocity of adduction (sigmoid with offset) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_offset) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=45).value = mean_angular_velocity_offset
     file.write("Avg. angular velocity of adduction (generalized logistic function) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_glf) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=46).value = mean_angular_velocity_glf
     file.write("Avg. angular velocity of adduction (Gompertz-like function) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_gompertz) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=47).value = mean_angular_velocity_gompertz
     file.write("Avg. angular velocity of adduction (cubic fit function) in degrees/s (80%-20%): " +
                str(mean_angular_velocity_cubic) + "\n\n")
+    sheet_overview.cell(row=spreadsheet_row, column=48).value = mean_angular_velocity_cubic
 
     file.write("Max. angular velocity of adduction (sigmoid without offset) in degrees/s: " +
                str(max_angular_velocity_sigmoid_without_vert_offset) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=49).value = max_angular_velocity_sigmoid_without_vert_offset
     file.write("Max. angular velocity of adduction (sigmoid with offset) in degrees/s: " +
                str(max_angular_velocity_sigmoid_offset) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=50).value = max_angular_velocity_sigmoid_offset
     file.write("Max. angular velocity of adduction (generalized logistic function) in degrees/s: " +
                str(max_angular_velocity_glf) + "\n")
+    sheet_overview.cell(row=spreadsheet_row, column=51).value = max_angular_velocity_glf
     file.write("Max. angular velocity of adduction (Gompertz-like function) in degrees/s: " +
                str(max_angular_velocity_gompertz) + "\n\n")
-
-    sheet_overview.cell(row=spreadsheet_row, column=34).value = mean_ang_accel_sigmoid_without_vert_offset
-    sheet_overview.cell(row=spreadsheet_row, column=35).value = mean_ang_accel_sigmoid_offset
-    sheet_overview.cell(row=spreadsheet_row, column=36).value = mean_ang_accel_glf
-
-    sheet_overview.cell(row=spreadsheet_row, column=37).value = mean_ang_accel_gompertz
-
-    sheet_overview.cell(row=spreadsheet_row, column=38).value = mean_ang_accel_cubic
-
-    sheet_overview.cell(row=spreadsheet_row, column=39).value = mean_angular_velocity_start
-    sheet_overview.cell(row=spreadsheet_row, column=40).value = mean_angular_velocity_start_offset
-    sheet_overview.cell(row=spreadsheet_row, column=41).value = mean_angular_velocity_glf_start
-    sheet_overview.cell(row=spreadsheet_row, column=42).value = mean_angular_velocity_gompertz_start
-    sheet_overview.cell(row=spreadsheet_row, column=43).value = mean_angular_velocity_cubic_start
-
-    sheet_overview.cell(row=spreadsheet_row, column=44).value = mean_angular_velocity
-    sheet_overview.cell(row=spreadsheet_row, column=45).value = mean_angular_velocity_offset
-    sheet_overview.cell(row=spreadsheet_row, column=46).value = mean_angular_velocity_glf
-    sheet_overview.cell(row=spreadsheet_row, column=47).value = mean_angular_velocity_gompertz
-    sheet_overview.cell(row=spreadsheet_row, column=48).value = mean_angular_velocity_cubic
-
-    sheet_overview.cell(row=spreadsheet_row, column=49).value = max_angular_velocity_sigmoid_without_vert_offset
-    sheet_overview.cell(row=spreadsheet_row, column=50).value = max_angular_velocity_sigmoid_offset
-    sheet_overview.cell(row=spreadsheet_row, column=51).value = max_angular_velocity_glf
     sheet_overview.cell(row=spreadsheet_row, column=52).value = max_angular_velocity_gompertz
 
     # save spreadsheet file
@@ -2354,7 +2351,8 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
             mask_user = user.getMaskForUser(frame.shape[0], frame.shape[1])
             mask_seeds = np.zeros((frame.shape[0], frame.shape[1])).astype('uint8')
             frame[mask_user == 255] = [0, 0, 255]
-            cv2.namedWindow('Input Mask', 1)
+            cv2.namedWindow("Input Mask", 1)
+            cv2.setWindowProperty("Input Mask", cv2.WND_PROP_TOPMOST, 1)
             cv2.setMouseCallback("Input Mask", callbackMouseClick)
             callback = True
             while callback:
