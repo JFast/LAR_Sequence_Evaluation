@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import math
+import sys
 
 def getConvexHull(contour):
     """
@@ -134,7 +135,7 @@ def getAngleBetweenPoints(point1, point2, point3):
     b = math.sqrt(pow(abs(point2[0] - point3[0]), 2) + pow(abs(point2[1] - point3[1]), 2))
     c = math.sqrt(pow(abs(point1[0] - point3[0]), 2) + pow(abs(point1[1] - point3[1]), 2))
     # apply law of cosines to obtain angle between line segments
-    angle = (math.acos((pow(a, 2) + pow(b, 2) - pow(c, 2))/(2 * a * b))) * (180/math.pi)
+    angle = (math.acos((pow(a, 2) + pow(b, 2) - pow(c, 2))/(2 * a * b))) * (180.0/math.pi)
     return angle
 
 
@@ -419,12 +420,16 @@ def interception_two_lines(slope_1, intercept_1, slope_2, intercept_2):
     results = [point_of_reference_2[0]-point_of_reference_1[0], point_of_reference_2[1]-point_of_reference_1[1]]
     direction_vector_1 = [direction_vector_1[0], direction_vector_1[1]]
     direction_vector_2 = [-direction_vector_2[0], -direction_vector_2[1]]
-    # solve system with NumPy
-    result = np.linalg.solve(np.array([direction_vector_1, direction_vector_2]), np.array(results))
-    # inject reesult and compute x and y coordinates of point of intersection
-    x = point_of_reference_1[0]+result[1]*direction_vector_1[0]
-    y = point_of_reference_1[1]+result[1]*direction_vector_1[1]
-    return (x, y)
+    # solve system of linear equations
+    try:
+        result = np.linalg.solve(np.array([direction_vector_1, direction_vector_2]), np.array(results))
+        # inject result, compute x and y coordinates of point of intersection
+        x = point_of_reference_1[0]+result[1]*direction_vector_1[0]
+        y = point_of_reference_1[1]+result[1]*direction_vector_1[1]
+        return (x, y)
+    except:
+        print("No intersection of lines found!")
+        return
 
 
 def getVertexPoint(left_point_glottis, right_point_glottis, left_point_bottom, right_point_bottom):
@@ -445,6 +450,9 @@ def getVertexPoint(left_point_glottis, right_point_glottis, left_point_bottom, r
     intercept_left = get_y_intercept(left_point_glottis, slope_left)
     intercept_right = get_y_intercept(right_point_glottis, slope_right)
     vertex_point = interception_two_lines(slope_left, intercept_left, slope_right, intercept_right)
+    # if no point of interception could be found: assume vertex point very far away
+    if not vertex_point:
+        vertex_point = ((right_point_glottis[0] - left_point_glottis[0]) / 2.0, 100000.0)
     vertex_point = (int(vertex_point[0]), int(vertex_point[1]))
     return vertex_point
 

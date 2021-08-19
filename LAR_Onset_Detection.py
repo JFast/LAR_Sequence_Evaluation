@@ -66,10 +66,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "03"
-sequence_number = "05"
+patient = "11"
+sequence_number = "12"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 31
+spreadsheet_row = 100
 # selection of glottal orientation correction method ('PCA' or 'iterative' method)
 mode_orientation_correction = "iterative"
 # use avi file
