@@ -127,30 +127,38 @@ def getCannyThreshold(frame, x, y):
     # initialize "mean" with reference point inside glottis
     mean = frame[y, x]
     while get_canny:
-        # iterate over threshold values in "thresh_array"
-        thresh = thresh_array[index]
-        # create labels of "valleys" in image
-        label = getLabels(frame, thresh, thresh)
-        # apply watershed transformation on image using labels
-        watershed = watershed_segmentation(cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR), label)
-        # get index of segment containing reference point
-        index_segment = segment_glottis_point(watershed, x, y, frame.shape[0], frame.shape[1])
-        # assert if segment is connected to image boundaries
-        connectedToBoundary = isSegmentConnectedToBoundaryMask(frame.shape[1], frame.shape[0], watershed, index_segment, boundary_mask)
-        # if segment connected to boundaries
-        if connectedToBoundary:
-            if mean + 10 < np.mean(frame[watershed == index_segment]):
-                index = index + 1
-                get_canny = True
-            else:
-                get_canny = False
+        if index > 20:
+            canny_thresh = thresh_array[20]
+            get_canny = False
         else:
-            if mean + 30 < np.mean(frame[watershed == index_segment]):
-                index = index + 1
-                get_canny = True
+            # iterate over threshold values in "thresh_array"
+            thresh = thresh_array[index]
+            # create labels of "valleys" in image
+            label = getLabels(frame, thresh, thresh)
+            # apply watershed transformation on image using labels
+            watershed = watershed_segmentation(cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR), label)
+            # get index of segment containing reference point
+            index_segment = segment_glottis_point(watershed, x, y, frame.shape[0], frame.shape[1])
+            # assert if segment is connected to image boundaries
+            connectedToBoundary = isSegmentConnectedToBoundaryMask(frame.shape[1], frame.shape[0], watershed,
+                                                                   index_segment, boundary_mask)
+            # if segment connected to boundaries
+            if connectedToBoundary:
+                if mean + 10 < np.mean(frame[watershed == index_segment]):
+                    index = index + 1
+                    get_canny = True
+                else:
+                    get_canny = False
             else:
-                get_canny = False
-    canny_thresh = thresh_array[index]
+                if mean + 30 < np.mean(frame[watershed == index_segment]):
+                    index = index + 1
+                    get_canny = True
+                else:
+                    get_canny = False
+            if index < 21:
+                canny_thresh = thresh_array[index]
+            else:
+                pass
     return canny_thresh, canny_thresh
 
 
@@ -647,7 +655,7 @@ def rotate_frame(frame, angle):
     frame_center = tuple(np.array(frame.shape[1::-1])*0.5)
     rot_mat = cv2.getRotationMatrix2D(frame_center, angle, 1.0)
     frame_rotated = cv2.warpAffine(frame, rot_mat, frame.shape[1::-1], flags=cv2.INTER_LINEAR,
-                                   borderMode=cv2.BORDER_DEFAULT)
+                                   borderMode=cv2.BORDER_CONSTANT, borderValue=[255, 255, 255])
     return frame_rotated
 
 

@@ -18,7 +18,8 @@ import openpyxl as pxl
 
 # mouse callback
 def callbackMouseClick(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDBLCLK:
+    # if event == cv2.EVENT_LBUTTONDBLCLK:
+    if event == cv2.EVENT_LBUTTONDOWN:
         changeMask(x, y)
 
 
@@ -66,10 +67,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "11"
-sequence_number = "12"
+patient = "19"
+sequence_number = "04"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 100
+spreadsheet_row = 191
 # selection of glottal orientation correction method ('PCA' or 'iterative' method)
 mode_orientation_correction = "iterative"
 # use avi file
@@ -343,11 +344,9 @@ seed_points = segmentation.getSeedPointsRegionGrowingFirstFrame(frame.shape[0], 
                                                                 glottis_contour_watershed, mask_grid_region_growing)
 # calculate homogeneity criterion for region growing procedure
 homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
-# homogeneity_criterion = segmentation.getHomogeneityCriteriaRefined(frame_gray, seed_points)
 
 # apply region growing procedure
 region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
-# region_growing = segmentation.regionGrowingRefined(frame_gray, seed_points, homogeneity_criterion)
 
 # obtain glottis contour from region growing result
 glottis_contour_region_growing = segmentation.getGlottisContourRegionGrowing(region_growing)
@@ -378,10 +377,10 @@ while input_user_check:
             k = cv2.waitKey(1) & 0xFF
             if k == ord('y'):
                 seed_points = user.getSeedsFromMask(mask_seeds)
-                homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
+                # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
                 # homogeneity_criteria = segmentation.getHomogeneityCriteriaRefined(frame_gray, seed_points)
                 # fix homogeneity criterion to value (avoid over-segmentation)
-                # homogeneity_criterion = 1.02
+                homogeneity_criterion = 1.02
                 print("Homogeneity criterion: ", homogeneity_criterion)
                 region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
                 # region_growing = segmentation.regionGrowingRefined(frame_gray, seed_points, homogeneity_criteria)
@@ -690,6 +689,10 @@ relative_location_vertex_point_horizontal = (vertex_point[0] - left_point_glotti
                                             / (right_point_glottis[0] - left_point_glottis[0])
 
 # frame_result = frame.copy()
+
+# draw 'left_point_bottom' and 'right_point_bottom'
+frame_result = cv2.circle(frame_result, (int(left_point_bottom[0]), int(left_point_bottom[1])), 2, [255, 0, 255], -1)
+frame_result = cv2.circle(frame_result, (int(right_point_bottom[0]), int(right_point_bottom[1])), 2, [255, 0, 255], -1)
 
 # draw points for glottal angle
 frame_result = cv2.circle(frame_result, (int(left_point_glottis[0]), int(left_point_glottis[1])), 2, [255, 0, 0], -1)
@@ -2360,9 +2363,9 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
                 k = cv2.waitKey(1) & 0xFF
                 if k == ord('y'):
                     seed_points = user.getSeedsFromMask(mask_seeds)
-                    homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
+                    # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
                     # fix homogeneity criterion to value (avoid over-segmentation)
-                    # homogeneity_criterion = 1.02
+                    homogeneity_criterion = 1.02
                     region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
                     glottis_contour = segmentation.getGlottisContourRegionGrowing(region_growing)
                     frame_contour = display.drawGlottisContour(frame_result, glottis_contour, [0, 255, 0])
