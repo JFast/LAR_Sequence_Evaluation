@@ -209,7 +209,7 @@ def angle_straight_lines(slope_1, slope_2):
     - computes angle between two lines using line slopes in degrees
     :param slope_1: slope of line 1
     :param slope_2: slope of line 2
-    :return: angle between lines 1 and 2
+    :return: angle between lines 1 and 2 in degrees
     """
     # apply addition theorem for inverse tangent
     angle = math.atan2(abs((slope_1 - slope_2)), abs(1 + slope_1 * slope_2))
@@ -234,7 +234,7 @@ def iterative_impact(trajectory, frame_numbers):
     for i in range(0, len(sample) - 6):
         # first subset
         first_points = sample[0:i + 3]
-        #second subset
+        # second subset
         second_points = sample[i + 3:len(sample) - 1]
         # identify x and y coordinates of first subset
         x_first = list()
@@ -250,14 +250,14 @@ def iterative_impact(trajectory, frame_numbers):
         error_sum_first = 0
         for point in first_points:
             # ordinary least squares approach
-            # error_sum_first = error_sum_first + abs(point[1] - (point[0] * fit_first[0] + fit_first[1]))
+            error_sum_first = error_sum_first + abs(point[1] - (point[0] * fit_first[0] + fit_first[1]))
 
             # total least squares approach
             # calculate coordinates of point on line at orthogonal distance to current point
-            x_line = (point[0] + fit_first[0] * point[1] - fit_first[0] * fit_first[1]) / (1.0 + (fit_first[1])**2)
-            y_line = fit_first[0] * x_line + fit_first[1]
+            # x_line = (point[0] + fit_first[0] * point[1] - fit_first[0] * fit_first[1]) / (1.0 + (fit_first[1])**2)
+            # y_line = fit_first[0] * x_line + fit_first[1]
             # calculate orthogonal distance to line for current point
-            error_sum_first = error_sum_first + np.sqrt((point[0] - x_line)**2 + (point[1] - y_line)**2)
+            # error_sum_first = error_sum_first + np.sqrt((point[0] - x_line)**2 + (point[1] - y_line)**2)
 
         # identify x and y coordinates of second subset
         x_second = list()
@@ -273,14 +273,14 @@ def iterative_impact(trajectory, frame_numbers):
         error_sum_second = 0
         for point in second_points:
             # ordinary least squares approach
-            # error_sum_second = error_sum_second + abs(point[1] - (point[0] * fit_second[0] + fit_second[1]))
+            error_sum_second = error_sum_second + abs(point[1] - (point[0] * fit_second[0] + fit_second[1]))
 
             # total least squares approach
             # calculate coordinates of point on line at orthogonal distance to current point
-            x_line = (point[0] + fit_second[0] * point[1] - fit_second[0] * fit_second[1]) / (1.0 + (fit_second[1])**2)
-            y_line = fit_second[0] * x_line + fit_second[1]
+            # x_line = (point[0] + fit_second[0] * point[1] - fit_second[0] * fit_second[1]) / (1.0 + (fit_second[1])**2)
+            # y_line = fit_second[0] * x_line + fit_second[1]
             # calculate orthogonal distance to line for current point
-            error_sum_second = error_sum_second + np.sqrt((point[0] - x_line)**2 + (point[1] - y_line)**2)
+            # error_sum_second = error_sum_second + np.sqrt((point[0] - x_line)**2 + (point[1] - y_line)**2)
 
         # add first and second error sum to total error sum
         # add total error sum to list for later use
@@ -294,25 +294,34 @@ def iterative_impact(trajectory, frame_numbers):
     # assert which sampling point should be assigned to which subset
     for point in trajectory:
         # use ordinary least squares approach
-        # if abs(point[1] - (point[0] * fits_first[index][0] + fits_first[index][1])) <= abs(point[1] - (point[0]*fits_second[index][0]+fits_second[index][1])):
-
-        # use total least squares approach
-        # calculate coordinates of point on first line at orthogonal distance to current point
-        x_line_first = (point[0] + fits_first[index][0] * point[1] - fits_first[index][0] * fits_first[index][1]) / (1.0 + fits_first[index][1] ** 2)
-        y_line_first = fits_first[index][0] * x_line_first + fits_first[index][1]
-        # calculate coordinates of point on second line at orthogonal distance to current point
-        x_line_second = (point[0] + fits_second[index][0] * point[1] - fits_second[index][0] * fits_second[index][1]) / (1.0 + fits_second[index][1] ** 2)
-        y_line_second = fits_second[index][0] * x_line_second + fits_second[index][1]
-
-        if (np.sqrt((point[0] - x_line_first) ** 2 + (point[1] - y_line_first) ** 2)) <= (np.sqrt((point[0] - x_line_second) ** 2 + (point[1] - y_line_second) ** 2)):
+        if abs(point[1] - (point[0] * fits_first[index][0] + fits_first[index][1])) <= \
+                abs(point[1] - (point[0]*fits_second[index][0]+fits_second[index][1])):
             list_first.append(point)
         else:
             list_second.append(point)
 
+        # # use total least squares approach
+        # # calculate coordinates of point on first line at orthogonal distance to current point
+        # x_line_first = (point[0] + fits_first[index][0] * point[1] - fits_first[index][0] * fits_first[index][1]) /
+        # (1.0 + fits_first[index][1] ** 2)
+        # y_line_first = fits_first[index][0] * x_line_first + fits_first[index][1]
+        # # calculate coordinates of point on second line at orthogonal distance to current point
+        # x_line_second = (point[0] + fits_second[index][0] * point[1] - fits_second[index][0] * fits_second[index][1])
+        # / (1.0 + fits_second[index][1] ** 2)
+        # y_line_second = fits_second[index][0] * x_line_second + fits_second[index][1]
+        #
+        # if (np.sqrt((point[0] - x_line_first) ** 2 + (point[1] - y_line_first) ** 2)) <= (np.sqrt((point[0] -
+        # x_line_second) ** 2 + (point[1] - y_line_second) ** 2)):
+        #     list_first.append(point)
+        # else:
+        #     list_second.append(point)
+
     # compute angle between directions
     angle = angle_straight_lines(fits_first[index][0], fits_second[index][0])
-    # frame = cv2.line(frame, (0, int(0 * fits_first[index][0] + fits_first[index][1])), (frame.shape[1], int(frame.shape[1]*fits_first[index][0] + fits_first[index][1])), [155, 88, 0], 1)
-    # frame = cv2.line(frame, (0, int(0 * fits_second[index][0] + fits_second[index][1])), (frame.shape[1], int(frame.shape[1] * fits_second[index][0] + fits_second[index][1])), [41, 123, 231],1)
+    # frame = cv2.line(frame, (0, int(0 * fits_first[index][0] + fits_first[index][1])),
+    # (frame.shape[1], int(frame.shape[1]*fits_first[index][0] + fits_first[index][1])), [155, 88, 0], 1)
+    # frame = cv2.line(frame, (0, int(0 * fits_second[index][0] + fits_second[index][1])),
+    # (frame.shape[1], int(frame.shape[1] * fits_second[index][0] + fits_second[index][1])), [41, 123, 231],1)
     return angle, list_first, list_second, frame_numbers[index]
 
 
