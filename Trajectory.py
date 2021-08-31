@@ -261,7 +261,7 @@ def iterative_impact(trajectory, frame_numbers):
     :return: angle: droplet rebound angle (zero degrees if no rebound detected),
              list_first: sampling points on first fit line,
              list_second: sampling points on second fit line,
-             frame_numbers[index]: index of frame showing droplet rebound
+             frame_numbers[index]: index of frame showing instant of droplet rebound
     """
     # convert sampling points into NumPy array
     sample = np.array(trajectory)
@@ -285,12 +285,10 @@ def iterative_impact(trajectory, frame_numbers):
     linear = odr.Model(f)
 
     # iterate over all sampling points and add to lists for two subsets
-    # for i in range(0, len(sample) - 6):
     for i in range(0, len(sample) - 7):
         # first subset
         first_points = sample[0:i + 3]
         # second subset
-        # second_points = sample[i + 3:len(sample) - 1]
         second_points = sample[i + 3:len(sample)]
 
         # identify x and y coordinates of first subset
@@ -401,6 +399,7 @@ def iterative_impact(trajectory, frame_numbers):
 
     # identify index with lowest total error sum
     index = np.argmin(error_sum)
+
     # create lists for final subsets
     list_first = list()
     list_second = list()
@@ -435,13 +434,13 @@ def iterative_impact(trajectory, frame_numbers):
     # (frame.shape[1], int(frame.shape[1]*fits_first[index][0] + fits_first[index][1])), [155, 88, 0], 1)
     # frame = cv2.line(frame, (0, int(0 * fits_second[index][0] + fits_second[index][1])),
     # (frame.shape[1], int(frame.shape[1] * fits_second[index][0] + fits_second[index][1])), [41, 123, 231],1)
-    return angle, list_first, list_second, frame_numbers[index]
+    return angle, list_first, list_second, frame_numbers[index + 2]
 
 
 def getMainTrajectoryUntilImpact(droplets_list, frame_impact):
     """
-    - determines objects on principal trajectory
-    - (objects occuring before rebound event)
+    - returns objects on principal trajectory
+    - (objects found before droplet rebound)
     :param droplets_list: list with all objects (before and after rebound event)
     :param frame_impact: instant of droplet impact/rebound
     :return: list of objects corresponding to principal trajectory

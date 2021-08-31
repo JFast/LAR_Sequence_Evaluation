@@ -27,8 +27,8 @@ params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
-pat = "02"
-sequence_number = "03"
+pat = "08"
+sequence_number = "04"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
@@ -342,7 +342,7 @@ if tracking:
                 if not check_frame:
                     for point in droplets_list:
                         droplet = point[1]
-                        frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [0, 255, 0], -1)
+                        frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 255, 0], -1)
                     frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                                              interpolation=cv2.INTER_LINEAR)
                     fgmask_opt_large = cv2.resize(fgmask_opt, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
@@ -357,7 +357,7 @@ if tracking:
                 else:
                     for point in droplets_list:
                         droplet = point[1]
-                        frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [0, 255, 0], -1)
+                        frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 255, 0], -1)
                     frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                                              interpolation=cv2.INTER_LINEAR)
                     fgmask_opt_large = cv2.resize(fgmask_opt, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
@@ -373,7 +373,7 @@ if tracking:
     frame_result = frame.copy()
     for point in droplets_list:
         droplet = point[1]
-        frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [255, 255, 255], -1)
+        frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [255, 255, 255], -1)
     frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                              interpolation=cv2.INTER_LINEAR)
     cv2.imwrite(saving_path + pat + "_" + sequence_number + "_Sampling_Points_Principal_Trajectory.png", frame_large)
@@ -402,8 +402,9 @@ if tracking:
     if tracking:
         points = list()
         frames = list()
-        
-        for i in range(6, len(droplets_list)):
+        # avoid noisy sampling points by excluding first points
+        # alternatively: range(6, len(droplets_list))
+        for i in range(10, len(droplets_list)):
             droplet = droplets_list[i]
             points.append(droplet[1])
             frames.append(droplet[0])
@@ -426,7 +427,7 @@ if tracking:
         # add found droplets to frame
         for point in droplets_list:
             droplet = point[1]
-            frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [0, 255, 0], -1)
+            frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 255, 0], -1)
         frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                              interpolation=cv2.INTER_LINEAR)
         cv2.imwrite(saving_path + pat + "_" + sequence_number +
@@ -496,7 +497,7 @@ if tracking:
                                 for candidate in candidates:
                                     cx, cy = traj.getCentroidOfContour(candidate)
                                     distance = traj.getDistanceBetweenDroplets([rebound_list[-1][1][0],
-                                                                                rebound_list[-1][1][1]],[cx, cy])
+                                                                                rebound_list[-1][1][1]], [cx, cy])
                                     if distance < min_distance:
                                         min_distance = distance
                                         candidate_to_add = candidate
@@ -584,10 +585,10 @@ if tracking:
 
                 for point in droplets_list:
                     droplet = point[1]
-                    frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [0, 255, 0], -1)
+                    frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 255, 0], -1)
                 for point in rebound_list:
                     droplet = point[1]
-                    frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [255, 255, 0], -1)
+                    frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [255, 255, 0], -1)
                 frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                                          interpolation=cv2.INTER_LINEAR)
                 fgmask_opt_large = cv2.resize(fgmask_opt, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
@@ -610,11 +611,11 @@ if tracking:
         # add rebound droplet positions to frame
         for point in rebound_list:
             droplet = point[1]
-            frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [0, 0, 255], -1)
+            frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 0, 255], -1)
         # add impact droplet positions to frame
         for point in droplets_list:
             droplet = point[1]
-            frame = cv2.circle(frame, (droplet[0], droplet[1]), 2, [155, 88, 0], -1)
+            frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [155, 88, 0], -1)
         cv2.imwrite(saving_path + pat + "_" + sequence_number + "_Rebound_Trajectory.png", frame)
         cv2.imwrite("Cover_Image.png", frame)
 
@@ -625,7 +626,8 @@ if tracking:
         file.write("\n\n")
         tracking = True
         if len(rebound_list) <= 5:
-            file.write("Evaluation of rebound trajectory not possible (not enough sampling points).\n")
+            file.write("Evaluation of impact type not possible (not enough sampling points).\n")
+            stimulation = "unclear"
             tracking = False
         else:
             points = list()
@@ -640,30 +642,32 @@ if tracking:
                 frames.append(droplet[0])
 
         if not len(points) >= 7:
+            stimulation = "unclear"
             tracking = False
 
-        stimulation = "Impact"
         if tracking:
             angle, list_first, list_second, impact_number = traj.iterative_impact(points, frames)
+
             file.write("Angle between principal and rebound trajectories: " + str(angle) + "\n")
 
             stimulation = ""
+
             if angle < 15:
-                stimulation = "Impact"
+                stimulation = "impact"
             else:
                 distance_main = traj.getDistanceBetweenDroplets([droplets_list[0][1][0], droplets_list[0][1][1]],
                                                                 [droplets_list[-1][1][0], droplets_list[-1][1][1]])
-                distance_abprall = traj.getDistanceBetweenDroplets([rebound_list[0][1][0], rebound_list[0][1][1]],
+                distance_rebound = traj.getDistanceBetweenDroplets([rebound_list[0][1][0], rebound_list[0][1][1]],
                                                                    [rebound_list[-1][1][0], rebound_list[-1][1][1]])
-                if distance_main/distance_abprall < (1/7) or distance_main/distance_abprall > 7:
-                    stimulation = "Impact"
+                if distance_main/distance_rebound < (1/7) or distance_main/distance_rebound > 7:
+                    stimulation = "impact"
                 else:
-                    stimulation = "Rebound"
+                    stimulation = "rebound"
 
         file.write("\nFINAL RESULT\n\n")
         file.write("Stimulation type: " + stimulation + "\n\n")
         file.write("Frame index of droplet impact: " + str(frame_impact) + "\n\n")
-        if stimulation == "Rebound":
+        if stimulation == "rebound":
             file.write("Rebound angle: " + str(angle) + "\n\n")
 
         # DETECTION OF ADDITIONAL DROPLETS
@@ -894,13 +898,13 @@ if tracking:
                         cv2.imshow("Foreground", fgmask_opt_large)
                         cv2.waitKey(1)
 
-        if len(further_droplets_list) > 10:
+        if len(further_droplets_list) > 5:
             video = cv2.VideoCapture(video_path)
             ret, frame = video.read()
             for point in further_droplets_list:
                 frame = cv2.circle(frame, (int(point[1][0]), int(point[1][1])), 1, [0, 255, 255])
             cv2.imwrite(saving_path + pat + "_" + sequence_number + "_Further_Droplets.png", frame)
-            file.write("Further droplets detected: yes\n")
+            file.write("Further droplets detected: yes\n\n")
             file.write("Sampling points of further droplets:\n")
             file.write(str(further_droplets_list))
         else:
