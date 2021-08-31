@@ -1,6 +1,7 @@
 import cv2
 import math
 import numpy as np
+import scipy.odr as odr
 
 def getMaxCandidate(candidates):
     """
@@ -72,7 +73,7 @@ def getBestPointInNextFrame(droplets_list, frame_number):
     last_frame_second = droplets_list[-2][0]
     best_point = [last_droplet[0] + ((last_droplet[0] - last_droplet_second[0]) / (last_frame - last_frame_second)) *
                   (frame_number - last_frame),
-        last_droplet[1] + ((last_droplet[1] - last_droplet_second[1]) / (last_frame - last_frame_second)) *
+                  last_droplet[1] + ((last_droplet[1] - last_droplet_second[1]) / (last_frame - last_frame_second)) *
                   (frame_number - last_frame)]
     return best_point
 
@@ -91,11 +92,42 @@ def getFitDropletList(droplets_list):
     for droplet in droplets_list:
         x_list.append(droplet[1][0])
         y_list.append(droplet[1][1])
+
+    # orthogonal distance fitting approach
+
+    # initialize beta
     fit = np.polyfit(x_list, y_list, 1)
+
+    # define linear model for orthogonal distance regression
+    # see https://docs.scipy.org/doc/scipy/reference/odr.html#id1 (accessed on 08/30/2021)
+    def f(b, x):
+        """linear function y = m*x+b"""
+        # b is a vector of the parameters.
+        # x is an array of the current x values.
+        # x (same format as x passed to Data).
+        #
+        # return array (same format as y passed to Data).
+        return b[0] * x + b[1]
+
+    # create Model instance
+    linear = odr.Model(f)
+
+    # create Data instance
+    mydata = odr.Data(x=x_list, y=y_list, we=1., wd=1.)
+
+    # create ODR instance
+    odr_instance = odr.ODR(mydata, linear, beta0=[fit[0], fit[1]])
+
+    # run orthogonal distance regression
+    odr_output1 = odr_instance.run()
+
+    # get orthogonal distance regression result
+    fit_odr = [odr_output1.beta[0], odr_output1.beta[1]]
+
     error_fit = 0
     for i in range(0, len(x_list)):
-        error_point = abs(y_list[i] - (fit[0] * x_list[i] + fit[1]))
-        error_fit = error_fit + error_point
+        error_point = abs(y_list[i] - (fit_odr[0] * x_list[i] + fit_odr[1]))
+        error_fit += error_point
     slope = get_slope(droplets_list[0][1], droplets_list[-1][1])
     intercept = get_y_intercept(droplets_list[0][1], slope)
     fit_slope = [slope, intercept]
@@ -103,13 +135,13 @@ def getFitDropletList(droplets_list):
         error_slope = 0
         for i in range(0, len(x_list)):
             error_point = abs(x_list[i] - ((y_list[i] - fit_slope[1])/fit_slope[0]))
-            error_slope = error_slope + error_point
+            error_slope += error_point
         if error_fit <= error_slope:
-            return fit
+            return fit_odr
         else:
             return fit_slope
     else:
-        return fit
+        return fit_odr
 
     # # calculate fit line (geometric fitting)
     # [vx, vy, x, y] = cv2.fitLine(droplets_list[1], cv2.DIST_L2, 0, 0.01, 0.01)
@@ -157,47 +189,52 @@ def getCylinderMask(frame, fit, distance, to_add, acceptance_angle, last_droplet
     # angle of fit line with respect to horizontal direction in frame
     angle = (-1) * (math.atan2(abs((fit[0] - 0)), abs(1))) * (180 / math.pi)
     # calculate translation distances of edges of search cone with respect to horizontal direction
-    x_schaetz = math.cos((math.pi / 180.0) * angle) * (distance + to_add)
-    y_schaetz = math.sin((math.pi / 180.0) * angle) * (distance + to_add)
+    x_estimate = math.cos((math.pi / 180.0) * angle) * (distance + to_add)
+    y_estimate = math.sin((math.pi / 180.0) * angle) * (distance + to_add)
     x_first = math.cos((math.pi / 180.0) * (angle - acceptance_angle)) * (distance + to_add)
     y_first = math.sin((math.pi / 180.0) * (angle - acceptance_angle)) * (distance + to_add)
     x_second = math.cos((math.pi / 180.0) * (angle + acceptance_angle)) * (distance + to_add)
     y_second = math.sin((math.pi / 180.0) * (angle + acceptance_angle)) * (distance + to_add)
     # determination of cone tip and edge points, for each case
-    schaetz_point = None
+    estimate_point = None
     if last_droplet[0] - droplets_list[0][1][0] < 0 and fit[0] <= 0:
-        schaetz_point = [last_droplet[0] - x_schaetz, last_droplet[1] - y_schaetz]
+        estimate_point = [last_droplet[0] - x_estimate, last_droplet[1] - y_estimate]
         first_point = [last_droplet[0] - x_first, last_droplet[1] - y_first]
         second_point = [last_droplet[0] - x_second, last_droplet[1] - y_second]
     elif last_droplet[0] - droplets_list[0][1][0] < 0 and fit[0] > 0:
-        schaetz_point = [last_droplet[0] - x_schaetz, last_droplet[1] + y_schaetz]
+        estimate_point = [last_droplet[0] - x_estimate, last_droplet[1] + y_estimate]
         first_point = [last_droplet[0] - x_first, last_droplet[1] + y_first]
         second_point = [last_droplet[0] - x_second, last_droplet[1] + y_second]
     elif last_droplet[0] - droplets_list[0][1][0] > 0 and fit[0] > 0:
-        schaetz_point = [last_droplet[0] + x_schaetz, last_droplet[1] - y_schaetz]
+        estimate_point = [last_droplet[0] + x_estimate, last_droplet[1] - y_estimate]
         first_point = [last_droplet[0] + x_first, last_droplet[1] - y_first]
         second_point = [last_droplet[0] + x_second, last_droplet[1] - y_second]
     elif last_droplet[0] - droplets_list[0][1][0] > 0 and fit[0] <= 0:
-        schaetz_point = [last_droplet[0] + x_schaetz, last_droplet[1] + y_schaetz]
+        estimate_point = [last_droplet[0] + x_estimate, last_droplet[1] + y_estimate]
         first_point = [last_droplet[0] + x_first, last_droplet[1] + y_first]
         second_point = [last_droplet[0] + x_second, last_droplet[1] + y_second]
     elif last_droplet[0] - droplets_list[0][1][0] == 0:
         if last_droplet[1] - droplets_list[0][1][1] > 0:
-            schaetz_point = [last_droplet[0] + x_schaetz, last_droplet[1] + y_schaetz]
+            estimate_point = [last_droplet[0] + x_estimate, last_droplet[1] + y_estimate]
             first_point = [last_droplet[0] + x_first, last_droplet[1] + y_first]
             second_point = [last_droplet[0] + x_second, last_droplet[1] + y_second]
         elif last_droplet[1] - droplets_list[0][1][1] < 0:
-            schaetz_point = [last_droplet[0] - x_schaetz, last_droplet[1] - y_schaetz]
+            estimate_point = [last_droplet[0] - x_estimate, last_droplet[1] - y_estimate]
             first_point = [last_droplet[0] - x_first, last_droplet[1] - y_first]
             second_point = [last_droplet[0] - x_second, last_droplet[1] - y_second]
-    if not schaetz_point == None:
+    if not estimate_point == None:
         # compute final plane of search cone (edge of cylindrical section of search space)
-        distance_first = schaetz_point[1] - first_point[1]
-        distance_second = schaetz_point[1] - second_point[1]
-        abstand = int((int(first_point[0]) - int(second_point[0])) / 2.0)
+        distance_first = estimate_point[1] - first_point[1]
+        distance_second = estimate_point[1] - second_point[1]
+        distance_first_second = int((int(first_point[0]) - int(second_point[0])) / 2.0)
         # compute mask with search space
         mask_to_check = np.zeros((frame.shape[0], frame.shape[1])).astype('uint8')
-        mask_to_check = cv2.fillPoly(mask_to_check, [np.array([last_droplet, [last_droplet[0] + abstand, last_droplet[1] - distance_first], first_point, schaetz_point, second_point, [last_droplet[0] - abstand, last_droplet[1] - distance_second]]).astype('int32')], 255, 1)
+        mask_to_check = cv2.fillPoly(mask_to_check,
+                                     [np.array([last_droplet, [last_droplet[0] + distance_first_second,
+                                                               last_droplet[1] - distance_first],
+                                                first_point, estimate_point, second_point,
+                                                [last_droplet[0] - distance_first_second,
+                                                 last_droplet[1] - distance_second]]).astype('int32')], 255, 1)
         return mask_to_check
     else:
         mask_to_check = np.zeros((frame.shape[0], frame.shape[1])).astype('uint8')
@@ -221,8 +258,10 @@ def iterative_impact(trajectory, frame_numbers):
     - executes iterative procedure to differentiate droplet impact and rebound events
     :param trajectory: sampling points on droplet trajectory
     :param frame_numbers: frame indices corresponding to sampling points
-    :return: angle: droplet rebound angle (zero degrees if no rebound detected), list_first: sampling points on first fit line,
-             list_second: sampling points on second fit line, frame_numbers[index]: frame index corresponding to droplet rebound
+    :return: angle: droplet rebound angle (zero degrees if no rebound detected),
+             list_first: sampling points on first fit line,
+             list_second: sampling points on second fit line,
+             frame_numbers[index]: index of frame showing droplet rebound
     """
     # convert sampling points into NumPy array
     sample = np.array(trajectory)
@@ -230,34 +269,81 @@ def iterative_impact(trajectory, frame_numbers):
     error_sum = list()
     fits_first = list()
     fits_second = list()
+
+    # define linear model for orthogonal distance regression
+    # see https://docs.scipy.org/doc/scipy/reference/odr.html#id1 (accessed on 08/30/2021)
+    def f(b, x):
+        """linear function y = m * x + b"""
+        # b is a vector of the parameters.
+        # x is an array of the current x values.
+        # x (same format as x passed to Data).
+        #
+        # return array (same format as y passed to Data).
+        return b[0] * x + b[1]
+
+    # create Model instance
+    linear = odr.Model(f)
+
     # iterate over all sampling points and add to lists for two subsets
-    for i in range(0, len(sample) - 6):
+    # for i in range(0, len(sample) - 6):
+    for i in range(0, len(sample) - 7):
         # first subset
         first_points = sample[0:i + 3]
         # second subset
-        second_points = sample[i + 3:len(sample) - 1]
+        # second_points = sample[i + 3:len(sample) - 1]
+        second_points = sample[i + 3:len(sample)]
+
         # identify x and y coordinates of first subset
         x_first = list()
         y_first = list()
         for point in first_points:
             x_first.append(point[0])
             y_first.append(point[1])
-        # fit first subset with line
-        fit_first = np.polyfit(x_first, y_first, 1)
-        # save slope and y-axis intercept of first list for later use
-        fits_first.append((fit_first[0], fit_first[1]))
-        # calculate error sum of first fit line
-        error_sum_first = 0
-        for point in first_points:
-            # ordinary least squares approach
-            error_sum_first = error_sum_first + abs(point[1] - (point[0] * fit_first[0] + fit_first[1]))
 
-            # total least squares approach
+        # fit first subset with line
+        # orthogonal distance regression approach
+
+        # create Data instance
+        mydata1 = odr.Data(x=x_first, y=y_first, we=1., wd=1.)
+
+        # obtain initial estimate of parameters from ordinary least squares regression
+        # fit_first[0]: slope
+        # fit_first[1]: y-axis intercept
+        fit_first = np.polyfit(x_first, y_first, 1)
+
+        # create orthogonal distance regression instance
+        odr1 = odr.ODR(mydata1, linear, beta0=[fit_first[0], fit_first[1]])
+
+        # run orthogonal distance regression
+        odr_output1 = odr1.run()
+
+        # print orthogonal distance regression output
+        print("ODR result: ")
+        odr_output1.pprint()
+        print("odr_output1.beta: ", odr_output1.beta)
+
+        # print ordinary least squares output
+        print("OLS result: ")
+        print(fit_first)
+        print("\n")
+
+        error_sum_first = 0
+
+        # # ordinary least squares approach
+        # fits_first.append((fit_first[0], fit_first[1]))
+        # # calculate error sum of first fit line
+        # for point in first_points:
+        #     error_sum_first = error_sum_first + abs(point[1] - (point[0] * fit_first[0] + fit_first[1]))
+
+        # orthogonal distance regression approach
+        fits_first.append((odr_output1.beta[0], odr_output1.beta[1]))
+        # calculate error sum of first fit line
+        for point in first_points:
             # calculate coordinates of point on line at orthogonal distance to current point
-            # x_line = (point[0] + fit_first[0] * point[1] - fit_first[0] * fit_first[1]) / (1.0 + (fit_first[1])**2)
-            # y_line = fit_first[0] * x_line + fit_first[1]
+            x_line = (point[0] + fit_first[0] * point[1] - fit_first[0] * fit_first[1]) / (1.0 + pow((fit_first[0]), 2))
+            y_line = fit_first[0] * x_line + fit_first[1]
             # calculate orthogonal distance to line for current point
-            # error_sum_first = error_sum_first + np.sqrt((point[0] - x_line)**2 + (point[1] - y_line)**2)
+            error_sum_first += np.sqrt(pow((point[0] - x_line), 2) + pow((point[1] - y_line), 2))
 
         # identify x and y coordinates of second subset
         x_second = list()
@@ -265,24 +351,51 @@ def iterative_impact(trajectory, frame_numbers):
         for point in second_points:
             x_second.append(point[0])
             y_second.append(point[1])
+
         # fit second subset with line
+        # orthogonal distance regression approach
+
+        # create Data instance
+        mydata2 = odr.Data(x=x_second, y=y_second, we=1., wd=1.)
+
+        # obtain initial estimate of parameters from ordinary least squares regression
+        # fit_second[0]: slope
+        # fit_second[1]: y-axis intercept
         fit_second = np.polyfit(x_second, y_second, 1)
+
+        # create orthogonal distance regression instance
+        odr2 = odr.ODR(mydata2, linear, beta0=[fit_second[0], fit_second[1]])
+
+        # run orthogonal distance regression
+        odr_output2 = odr2.run()
+
+        # print orthogonal distance regression result
+        print("ODR result: ")
+        odr_output2.pprint()
+        print("odr_output2.beta: ", odr_output2.beta)
+
+        # print ordinary least squares result
+        print("OLS result: ")
+        print(fit_second)
+        print("\n")
+
         # save slope and y-axis intercept of second list for later use
-        fits_second.append((fit_second[0], fit_second[1]))
+        # fits_second.append((fit_second[0], fit_second[1]))
+        fits_second.append((odr_output2.beta[0], odr_output2.beta[1]))
         # calculate error sum of second fit line
         error_sum_second = 0
         for point in second_points:
             # ordinary least squares approach
-            error_sum_second = error_sum_second + abs(point[1] - (point[0] * fit_second[0] + fit_second[1]))
+            # error_sum_second = error_sum_second + abs(point[1] - (point[0] * fit_second[0] + fit_second[1]))
 
             # total least squares approach
             # calculate coordinates of point on line at orthogonal distance to current point
-            # x_line = (point[0] + fit_second[0] * point[1] - fit_second[0] * fit_second[1]) / (1.0 + (fit_second[1])**2)
-            # y_line = fit_second[0] * x_line + fit_second[1]
+            x_line = (point[0] + fit_second[0] * point[1] - fit_second[0] * fit_second[1]) / \
+                     (1.0 + pow((fit_second[0]), 2))
+            y_line = fit_second[0] * x_line + fit_second[1]
             # calculate orthogonal distance to line for current point
-            # error_sum_second = error_sum_second + np.sqrt((point[0] - x_line)**2 + (point[1] - y_line)**2)
+            error_sum_second += np.sqrt(pow((point[0] - x_line), 2) + pow((point[1] - y_line), 2))
 
-        # add first and second error sum to total error sum
         # add total error sum to list for later use
         error_sum.append(error_sum_first + error_sum_second)
 
@@ -293,28 +406,28 @@ def iterative_impact(trajectory, frame_numbers):
     list_second = list()
     # assert which sampling point should be assigned to which subset
     for point in trajectory:
-        # use ordinary least squares approach
-        if abs(point[1] - (point[0] * fits_first[index][0] + fits_first[index][1])) <= \
-                abs(point[1] - (point[0]*fits_second[index][0]+fits_second[index][1])):
-            list_first.append(point)
-        else:
-            list_second.append(point)
-
-        # # use total least squares approach
-        # # calculate coordinates of point on first line at orthogonal distance to current point
-        # x_line_first = (point[0] + fits_first[index][0] * point[1] - fits_first[index][0] * fits_first[index][1]) /
-        # (1.0 + fits_first[index][1] ** 2)
-        # y_line_first = fits_first[index][0] * x_line_first + fits_first[index][1]
-        # # calculate coordinates of point on second line at orthogonal distance to current point
-        # x_line_second = (point[0] + fits_second[index][0] * point[1] - fits_second[index][0] * fits_second[index][1])
-        # / (1.0 + fits_second[index][1] ** 2)
-        # y_line_second = fits_second[index][0] * x_line_second + fits_second[index][1]
-        #
-        # if (np.sqrt((point[0] - x_line_first) ** 2 + (point[1] - y_line_first) ** 2)) <= (np.sqrt((point[0] -
-        # x_line_second) ** 2 + (point[1] - y_line_second) ** 2)):
+        # # use ordinary least squares approach
+        # if abs(point[1] - (point[0] * fits_first[index][0] + fits_first[index][1])) <= \
+        #         abs(point[1] - (point[0]*fits_second[index][0]+fits_second[index][1])):
         #     list_first.append(point)
         # else:
         #     list_second.append(point)
+
+        # use total least squares approach
+        # calculate coordinates of point on first line at orthogonal distance to current point
+        x_line_first = (point[0] + fits_first[index][0] * point[1] - fits_first[index][0] * fits_first[index][1]) / \
+                       (1.0 + pow(fits_first[index][0], 2))
+        y_line_first = fits_first[index][0] * x_line_first + fits_first[index][1]
+        # calculate coordinates of point on second line at orthogonal distance to current point
+        x_line_second = (point[0] + fits_second[index][0] * point[1] -
+                         fits_second[index][0] * fits_second[index][1]) / (1.0 + pow(fits_second[index][0], 2))
+        y_line_second = fits_second[index][0] * x_line_second + fits_second[index][1]
+
+        if np.sqrt(pow((point[0] - x_line_first), 2) + pow((point[1] - y_line_first), 2)) <= \
+                np.sqrt(pow((point[0] - x_line_second), 2) + pow((point[1] - y_line_second), 2)):
+            list_first.append(point)
+        else:
+            list_second.append(point)
 
     # compute angle between directions
     angle = angle_straight_lines(fits_first[index][0], fits_second[index][0])
@@ -334,11 +447,11 @@ def getMainTrajectoryUntilImpact(droplets_list, frame_impact):
     :return: list of objects corresponding to principal trajectory
     """
     test_list = droplets_list
-    test_list_abprall = list()
+    test_list_rebound = list()
     for point in test_list:
         if point[0] <= frame_impact:
-            test_list_abprall.append(point)
-    droplets_list = test_list_abprall
+            test_list_rebound.append(point)
+    droplets_list = test_list_rebound
     return droplets_list
 
 

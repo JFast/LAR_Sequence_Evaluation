@@ -26,18 +26,18 @@ params_blob.filterByInertia = True
 params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
-# load frame sequence
-# path to file
+# PATH DEFINITION
 pat = "02"
-sequence_number = "01"
+sequence_number = "03"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
 # use mp4 file
 # video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number +
 # "\es_01_pat_" + pat + "_seq_" + sequence_number + ".mp4"
-video = cv2.VideoCapture(video_path)
 
+# load frame sequence
+video = cv2.VideoCapture(video_path)
 
 # FILE FOR RESULT STORAGE
 saving_path = r"F:/Masterarbeit_Andra_Oltmann/Results_TMI/LAR_Stimulation_Detection/"
@@ -198,21 +198,21 @@ if tracking:
                 # retain all candidates with minimum radius MIN_DROPLET_RADIUS
                 candidates = list()
                 for droplet in droplets:
+                    # if current candidate larger than pre-defined minimum droplet radius
                     if droplet.size / 2.0 > params.MIN_DROPLET_RADIUS:
                         candidates.append(droplet)
                 # select largest candidate
                 candidate_to_add = traj.getMaxCandidate(candidates)
+                # add centroid coordinates to 'droplets_list'
                 droplets_list.append([frame_number, (int(candidate_to_add.pt[0]), int(candidate_to_add.pt[1]))])
 
             # detect additional sampling points
-
             check_frame = False
-
             if frame_number > first_frame:
                 # detection of second sampling point
                 if len(droplets_list) == 1:
-                    # check if temporal distance is below threshold value
                     if abs(droplets_list[-1][0] - frame_number) > params.TIME_BETWEEN_BLOBS:
+                        # stop search for droplet positions if temporal distance is above pre-defined threshold value
                         check_frame = True
                     else:
                         droplets = []
@@ -228,7 +228,7 @@ if tracking:
                         # if only one candidate found: add to list
                         if len(candidates) == 1:
                             droplets_list.append([frame_number, (int(candidates[0].pt[0]), int(candidates[0].pt[1]))])
-                        # if more than one candidate found: add to list
+                        # if more than one candidate found: add to list according to selection criteria
                         elif len(candidates) > 1:
                             last_droplet = droplets_list[-1][1]
                             # initialize min_distance with length of frame diagonal
@@ -245,9 +245,10 @@ if tracking:
                                     candidate_to_add = candidate
                             droplets_list.append([frame_number,
                                                   (int(candidate_to_add.pt[0]), int(candidate_to_add.pt[1]))])
-                # sampling points 2 to 5
+                # sampling points 3 to 5
+                # use findContours() instead of blob detector for droplet centroid detection
                 elif 1 < len(droplets_list) <= 4:
-                    # check if temporal distance is below threshold value
+                    # stop search for droplet positions if temporal distance is above pre-defined threshold value
                     if abs(droplets_list[-1][0] - frame_number) > params.TIME_BETWEEN_BLOBS:
                         check_frame = True
                     else:
@@ -304,7 +305,6 @@ if tracking:
                         mask_to_check = traj.getCylinderMask(frame, fit, distance, params.ADD_TO_SEARCH_RADIUS,
                                                              acceptance_angle, droplets_list[-1][1], droplets_list)
                         # draw search area
-                        # frame[mask_to_check == 255] = [0, 255, 255]
                         mask_search_area = np.zeros((256, 256, 3)).astype('uint8')
                         mask_search_area[mask_to_check == 255] = [0, 200, 0]
                         frame = cv2.addWeighted(frame, 1.0, mask_search_area, 0.3, 0.0)
@@ -347,13 +347,12 @@ if tracking:
                                              interpolation=cv2.INTER_LINEAR)
                     fgmask_opt_large = cv2.resize(fgmask_opt, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                                                   interpolation=cv2.INTER_LINEAR)
-
                     # write frame to output sequence
                     output_all.write(frame_large)
-
+                    # show current frame
                     cv2.imshow("Frame", frame_large)
                     cv2.imshow("Foreground", fgmask_opt_large)
-                    cv2.waitKey()
+                    cv2.waitKey(1)
                 # if no valid sampling point found
                 else:
                     for point in droplets_list:
@@ -363,7 +362,7 @@ if tracking:
                                              interpolation=cv2.INTER_LINEAR)
                     fgmask_opt_large = cv2.resize(fgmask_opt, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
                                                   interpolation=cv2.INTER_LINEAR)
-
+                    # show current frame
                     cv2.imshow("Frame", frame_large)
                     cv2.imshow("Foreground", fgmask_opt_large)
                     cv2.waitKey(1)
@@ -413,8 +412,10 @@ if tracking:
 
         file.write("Angle of principal trajectory: " + str(angle) + "\n\n")
         if angle < 40:
+            # impact: take last frame index as impact frame
             frame_impact = droplets_list[-1][0]
         else:
+            # rebound: take frame index identified by iterative_impact() as impact frame
             frame_impact = impact_number
             droplets_list = traj.getMainTrajectoryUntilImpact(droplets_list, frame_impact)
         file.write("Frame index of droplet impact (principal trajectory): " + str(frame_impact) + "\n\n")
@@ -891,7 +892,7 @@ if tracking:
 
                         cv2.imshow("Frame", frame_large)
                         cv2.imshow("Foreground", fgmask_opt_large)
-                        cv2.waitKey()
+                        cv2.waitKey(1)
 
         if len(further_droplets_list) > 10:
             video = cv2.VideoCapture(video_path)
