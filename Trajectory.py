@@ -313,7 +313,7 @@ def iterative_impact(trajectory, frame_numbers):
     linear = odr.Model(f)
 
     # iterate over all sampling points and add to lists for two subsets
-    for i in range(0, len(sample) - 7):
+    for i in range(0, len(sample) - 5):
         # first subset
         first_points = sample[0:i + 3]
         # second subset

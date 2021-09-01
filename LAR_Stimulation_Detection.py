@@ -28,7 +28,7 @@ detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
 pat = "02"
-sequence_number = "03"
+sequence_number = "04"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
