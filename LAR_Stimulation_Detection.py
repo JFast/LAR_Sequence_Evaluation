@@ -27,8 +27,8 @@ params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
-pat = "08"
-sequence_number = "04"
+pat = "11"
+sequence_number = "11"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
@@ -387,6 +387,7 @@ if tracking:
 
     # if more than four sampling points available
     if len(droplets_list) > 3:
+        # remove faulty detections at final section of droplet trajectory
         while droplets_list[-1][0] - droplets_list[-2][0] > 10 or droplets_list[-2][0] - droplets_list[-3][0] > 10:
             # remove last two elements from list
             droplets_list.remove(droplets_list[-1])
@@ -403,11 +404,16 @@ if tracking:
         points = list()
         frames = list()
         # avoid noisy sampling points by excluding first points
-        # alternatively: range(6, len(droplets_list))
-        for i in range(10, len(droplets_list)):
-            droplet = droplets_list[i]
-            points.append(droplet[1])
-            frames.append(droplet[0])
+        if len(droplets_list) < 15:
+            for i in range(6, len(droplets_list)):
+                droplet = droplets_list[i]
+                points.append(droplet[1])
+                frames.append(droplet[0])
+        else:
+            for i in range(10, len(droplets_list)):
+                droplet = droplets_list[i]
+                points.append(droplet[1])
+                frames.append(droplet[0])
         # separate sampling points into two subsets
         angle, list_first, list_second, impact_number = traj.iterative_impact(points, frames)
 
@@ -659,6 +665,8 @@ if tracking:
                                                                 [droplets_list[-1][1][0], droplets_list[-1][1][1]])
                 distance_rebound = traj.getDistanceBetweenDroplets([rebound_list[0][1][0], rebound_list[0][1][1]],
                                                                    [rebound_list[-1][1][0], rebound_list[-1][1][1]])
+                # classify as impact if length of main trajectory less than 1/7 of rebound trajectory or if
+                # length of rebound trajectory less than 1/7 of main trajectory
                 if distance_main/distance_rebound < (1/7) or distance_main/distance_rebound > 7:
                     stimulation = "impact"
                 else:
