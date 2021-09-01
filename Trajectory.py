@@ -81,7 +81,7 @@ def getBestPointInNextFrame(droplets_list, frame_number):
 def getFitDropletList(droplets_list):
     """
     - computes linear fit of detected droplet positions
-    - 'polyfit' function cannot be used for vertical droplet trajectories
+    - ODR cannot be used for vertical droplet trajectories
     - hence, manual line parameter determination using last and first droplet in list is applied in this case
     - fit with lowest residual is retained
     :param droplets_list: list with object (droplet) positions
@@ -93,15 +93,10 @@ def getFitDropletList(droplets_list):
         x_list.append(droplet[1][0])
         y_list.append(droplet[1][1])
 
-    # orthogonal distance fitting approach
-
-    # initialize beta
-    fit = np.polyfit(x_list, y_list, 1)
-
     # define linear model for orthogonal distance regression
     # see https://docs.scipy.org/doc/scipy/reference/odr.html#id1 (accessed on 08/30/2021)
     def f(b, x):
-        """linear function y = m*x+b"""
+        """linear function y = m * x + b"""
         # b is a vector of the parameters.
         # x is an array of the current x values.
         # x (same format as x passed to Data).
@@ -115,33 +110,66 @@ def getFitDropletList(droplets_list):
     # create Data instance
     mydata = odr.Data(x=x_list, y=y_list, we=1., wd=1.)
 
-    # create ODR instance
-    odr_instance = odr.ODR(mydata, linear, beta0=[fit[0], fit[1]])
+    # initialize beta using ordinary least squares fitting approach
+    fit = np.polyfit(x_list, y_list, 1)
+
+    # create orthogonal distance regression instance
+    odr_fit = odr.ODR(mydata, linear, beta0=[fit[0], fit[1]])
 
     # run orthogonal distance regression
-    odr_output1 = odr_instance.run()
+    odr_output = odr_fit.run()
+    fit_odr = [odr_output.beta[0], odr_output.beta[1]]
 
-    # get orthogonal distance regression result
-    fit_odr = [odr_output1.beta[0], odr_output1.beta[1]]
+    # compare errors of ODR and manual approaches
 
-    error_fit = 0
+    # calculate ODR fit error
+    error_odr = 0
     for i in range(0, len(x_list)):
-        error_point = abs(y_list[i] - (fit_odr[0] * x_list[i] + fit_odr[1]))
-        error_fit += error_point
+        # calculate coordinates of point on line at orthogonal distance to current point
+        x_line = (x_list[i] + odr_output.beta[0] * y_list[i] - odr_output.beta[0] * odr_output.beta[1]) / \
+                 (1.0 + pow((odr_output.beta[0]), 2))
+        y_line = odr_output.beta[0] * x_line + odr_output.beta[1]
+        # calculate orthogonal distance to line for current point
+        error_point = np.sqrt(pow((x_list[i] - x_line), 2) + pow((y_list[i] - y_line), 2))
+        error_odr += error_point
+
     slope = get_slope(droplets_list[0][1], droplets_list[-1][1])
     intercept = get_y_intercept(droplets_list[0][1], slope)
     fit_slope = [slope, intercept]
-    if not fit_slope[0] == 0:
-        error_slope = 0
-        for i in range(0, len(x_list)):
-            error_point = abs(x_list[i] - ((y_list[i] - fit_slope[1])/fit_slope[0]))
-            error_slope += error_point
-        if error_fit <= error_slope:
-            return fit_odr
-        else:
-            return fit_slope
-    else:
+
+    # calculate manual fit error
+    error_slope = 0
+    for i in range(0, len(x_list)):
+        x_line = (x_list[i] + fit_slope[0] * y_list[i] - fit_slope[0] * fit_slope[1]) / \
+                 (1.0 + pow((fit_slope[0]), 2))
+        y_line = fit_slope[0] * x_line + fit_slope[1]
+        # calculate orthogonal distance to line for current point
+        error_point = np.sqrt(pow((x_list[i] - x_line), 2) + pow((y_list[i] - y_line), 2))
+        error_slope += error_point
+
+    if error_odr <= error_slope:
         return fit_odr
+    else:
+        return fit_slope
+
+    # error_fit = 0
+    # for i in range(0, len(x_list)):
+    #     error_point = abs(y_list[i] - (fit[0] * x_list[i] + fit[1]))
+    #     error_fit += error_point
+    # slope = get_slope(droplets_list[0][1], droplets_list[-1][1])
+    # intercept = get_y_intercept(droplets_list[0][1], slope)
+    # fit_slope = [slope, intercept]
+    # if not fit_slope[0] == 0:
+    #     error_slope = 0
+    #     for i in range(0, len(x_list)):
+    #         error_point = abs(x_list[i] - ((y_list[i] - fit_slope[1])/fit_slope[0]))
+    #         error_slope += error_point
+    #     if error_fit <= error_slope:
+    #         return fit
+    #     else:
+    #         return fit_slope
+    # else:
+    #     return fit
 
     # # calculate fit line (geometric fitting)
     # [vx, vy, x, y] = cv2.fitLine(droplets_list[1], cv2.DIST_L2, 0, 0.01, 0.01)
@@ -325,8 +353,6 @@ def iterative_impact(trajectory, frame_numbers):
         print(fit_first)
         print("\n")
 
-        error_sum_first = 0
-
         # # ordinary least squares approach
         # fits_first.append((fit_first[0], fit_first[1]))
         # # calculate error sum of first fit line
@@ -335,11 +361,14 @@ def iterative_impact(trajectory, frame_numbers):
 
         # orthogonal distance regression approach
         fits_first.append((odr_output1.beta[0], odr_output1.beta[1]))
+
         # calculate error sum of first fit line
+        error_sum_first = 0
         for point in first_points:
             # calculate coordinates of point on line at orthogonal distance to current point
-            x_line = (point[0] + fit_first[0] * point[1] - fit_first[0] * fit_first[1]) / (1.0 + pow((fit_first[0]), 2))
-            y_line = fit_first[0] * x_line + fit_first[1]
+            x_line = (point[0] + odr_output1.beta[0] * point[1] - odr_output1.beta[0] * odr_output1.beta[1]) / \
+                     (1.0 + pow((odr_output1.beta[0]), 2))
+            y_line = odr_output1.beta[0] * x_line + odr_output1.beta[1]
             # calculate orthogonal distance to line for current point
             error_sum_first += np.sqrt(pow((point[0] - x_line), 2) + pow((point[1] - y_line), 2))
 
@@ -380,6 +409,7 @@ def iterative_impact(trajectory, frame_numbers):
         # save slope and y-axis intercept of second list for later use
         # fits_second.append((fit_second[0], fit_second[1]))
         fits_second.append((odr_output2.beta[0], odr_output2.beta[1]))
+
         # calculate error sum of second fit line
         error_sum_second = 0
         for point in second_points:
@@ -388,9 +418,9 @@ def iterative_impact(trajectory, frame_numbers):
 
             # total least squares approach
             # calculate coordinates of point on line at orthogonal distance to current point
-            x_line = (point[0] + fit_second[0] * point[1] - fit_second[0] * fit_second[1]) / \
-                     (1.0 + pow((fit_second[0]), 2))
-            y_line = fit_second[0] * x_line + fit_second[1]
+            x_line = (point[0] + odr_output2.beta[0] * point[1] - odr_output2.beta[0] * odr_output2.beta[1]) / \
+                     (1.0 + pow((odr_output2.beta[0]), 2))
+            y_line = odr_output2.beta[0] * x_line + odr_output2.beta[1]
             # calculate orthogonal distance to line for current point
             error_sum_second += np.sqrt(pow((point[0] - x_line), 2) + pow((point[1] - y_line), 2))
 

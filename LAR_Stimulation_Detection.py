@@ -27,8 +27,8 @@ params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
-pat = "11"
-sequence_number = "11"
+pat = "02"
+sequence_number = "03"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
@@ -403,14 +403,14 @@ if tracking:
     if tracking:
         points = list()
         frames = list()
-        # avoid noisy sampling points by excluding first points
-        if len(droplets_list) < 15:
-            for i in range(6, len(droplets_list)):
+        # avoid noisy sampling points by excluding first points, if possible
+        if 7 < len(droplets_list) < 15:
+            for i in range(0, len(droplets_list)):
                 droplet = droplets_list[i]
                 points.append(droplet[1])
                 frames.append(droplet[0])
-        else:
-            for i in range(10, len(droplets_list)):
+        elif 15 < len(droplets_list):
+            for i in range(6, len(droplets_list)):
                 droplet = droplets_list[i]
                 points.append(droplet[1])
                 frames.append(droplet[0])
