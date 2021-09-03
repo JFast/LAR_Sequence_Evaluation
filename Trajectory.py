@@ -289,7 +289,7 @@ def iterative_impact(trajectory, frame_numbers):
     :return: angle: droplet rebound angle (zero degrees if no rebound detected),
              list_first: sampling points on first fit line,
              list_second: sampling points on second fit line,
-             frame_numbers[index]: index of frame showing instant of droplet rebound
+             frame_numbers[index + 2]: index of frame showing instant of droplet rebound
     """
     # convert sampling points into NumPy array
     sample = np.array(trajectory)
