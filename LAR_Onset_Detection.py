@@ -67,10 +67,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "13"
-sequence_number = "01"
+patient = "19"
+sequence_number = "03"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 117
+spreadsheet_row = 250
 # selection of glottal orientation correction method ('PCA' or 'iterative' method)
 mode_orientation_correction = "iterative"
 # use avi file
@@ -377,10 +377,10 @@ while input_user_check:
             k = cv2.waitKey(1) & 0xFF
             if k == ord('y'):
                 seed_points = user.getSeedsFromMask(mask_seeds)
-                # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
+                homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
                 # homogeneity_criteria = segmentation.getHomogeneityCriteriaRefined(frame_gray, seed_points)
                 # fix homogeneity criterion to value (avoid over-segmentation)
-                homogeneity_criterion = 1.02
+                # homogeneity_criterion = 1.02
                 print("Homogeneity criterion: ", homogeneity_criterion)
                 region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
                 # region_growing = segmentation.regionGrowingRefined(frame_gray, seed_points, homogeneity_criteria)
@@ -2247,9 +2247,6 @@ try:
                str(max_angular_velocity_gompertz) + "\n\n")
     sheet_overview.cell(row=spreadsheet_row, column=52).value = max_angular_velocity_gompertz
 
-    # save spreadsheet file
-    spreadsheet.save(filename=spreadsheet_path)
-
     # check if vertical offset parameter value below 0.1
     if popt_area_sigmoid_offset[3] < 0.1:
         file.write("Minimum relative glottal area with respect to initial area in percent: " +
@@ -2258,9 +2255,16 @@ try:
                    "minimum glottal area): ")
         file.write(str((frame_number_list_area[np.argmin(area_list)] - sigmoid_distance_98) / 4.0))
         file.write("\n")
+        # file.write("Frame index of minimal glottal area: " +
+        #            str(frame_number_list_area[np.argmin(area_list)]) + "\n")
     else:
         file.write("Relative glottal area with respect to initial area in percent: " +
                    str((np.min(area_list)/area_list[0]) * 100) + "\n")
+        # file.write("Incomplete glottal closure detected. Frame index of minimal glottal area: " +
+        #            str(frame_number_list_area[np.argmin(area_list)]) + "\n")
+
+    # save spreadsheet file
+    spreadsheet.save(filename=spreadsheet_path)
 except:
     pass
 
@@ -2363,9 +2367,9 @@ if input_user == "y" and not (popt_area_sigmoid_offset[3] > 0.15):
                 k = cv2.waitKey(1) & 0xFF
                 if k == ord('y'):
                     seed_points = user.getSeedsFromMask(mask_seeds)
-                    # homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
+                    homogeneity_criterion = segmentation.getHomogeneityCriterion(frame_gray, seed_points)
                     # fix homogeneity criterion to value (avoid over-segmentation)
-                    homogeneity_criterion = 1.02
+                    # homogeneity_criterion = 1.02
                     region_growing = segmentation.regionGrowing(frame_gray, seed_points, homogeneity_criterion)
                     glottis_contour = segmentation.getGlottisContourRegionGrowing(region_growing)
                     frame_contour = display.drawGlottisContour(frame_result, glottis_contour, [0, 255, 0])
