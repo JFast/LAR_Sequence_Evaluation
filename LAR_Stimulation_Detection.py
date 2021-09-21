@@ -27,8 +27,8 @@ params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
-pat = "04"
-sequence_number = "03"
+pat = "02"
+sequence_number = "08"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
@@ -633,6 +633,7 @@ if tracking:
         tracking = True
         if len(rebound_list) <= 5:
             file.write("Evaluation of impact type not possible (not enough sampling points).\n")
+            # BUG?
             stimulation = "unclear"
             tracking = False
         else:
