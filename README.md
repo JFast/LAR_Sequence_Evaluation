@@ -1,4 +1,4 @@
-# Sequence_Evaluation_LAR
+# LAR_Sequence_Evaluation_Laryngoscope
 This repository contains source code for the computational analysis of endoscopic high-speed sequences showing the laryngeal adductor reflex (LAR) response after droplet-based stimulation.
 
 THIS REPOSITORY IS PROVIDED PRIOR TO ACCEPTANCE OF THE ASSOCIATED MANUSCRIPT.
@@ -26,7 +26,7 @@ All code executable on a standard desktop PC (no GPU required).
      FastOltmannIEEE.2021, 
      author={Jacob F. Fast and Andra Oltmann and Svenja Spindeldreier and Martin Ptok}, 
      year={2021},
-     title={Code repository associated with the contribution "Computational Analysis of the Droplet-Stimulated Laryngeal Adductor Reflex in Endoscopic High-Speed Frame Sequences"}, 
+     title={Code repository associated with the contribution "Computational Analysis of the Droplet-Stimulated Laryngeal Adductor Reflex in High-Speed Sequences"}, 
      DOI={},
      publisher={GitHub}
      }
