@@ -2132,50 +2132,50 @@ except:
     file.write("Glottal area: cubic polynomial fit not successful!\n\n")
 
 # LINEAR FIT (NOT USED FOR EVALUATION)
-try:
-    # (distance)
-    if len(distance_list) > 7:
-        impact_distance, lines_lar_begin_distance = fit.linear_fit(frame_number_list_distance, distance_list)
-
-        plot.linearFitDistance(frame_number_list_distance, distance_list, lines_lar_begin_distance, impact_distance,
-                               saving_path + patient + "_" + sequence_number +
-                               "_Linear_Fit_Vocal_Fold_Edge_Distance.png")
-
-        print("Vocal fold edge distance: ", impact_distance[0])
-
-        file.write("LAR ONSET TIME (LINEAR FIT, NOT USED FOR EVALUATION)\n\n")
-
-        file.write("LAR onset frame via vocal fold edge distance (linear fit, not used for evaluation): ")
-        file.write(str(impact_distance[0]))
-        file.write("\n")
-
-    # (angle)
-    if len(angle_list) > 7:
-        impact_angle, lines_lar_begin_angle = fit.linear_fit(frame_number_list_angle, angle_list)
-
-        plot.linearFitAngle(frame_number_list_angle, angle_list, lines_lar_begin_angle, impact_angle, saving_path +
-                            patient + "_" + sequence_number + "_Linear_Fit_Glottal_Angle.png")
-
-        print("Glottal angle: ", impact_angle[0])
-
-        file.write("LAR onset frame via glottal angle (linear fit, not used for evaluation): ")
-        file.write(str(impact_angle[0]))
-        file.write("\n")
-
-    # (area)
-    if len(area_list) > 7:
-        impact_area, lines_lar_begin_area = fit.linear_fit(frame_number_list_area, area_list)
-
-        plot.linearFitArea(frame_number_list_area, area_list, lines_lar_begin_area, impact_area, saving_path +
-                           patient + "_" + sequence_number + "_Linear_Fit_Glottal_Area.png")
-
-        print("Glottal area: ", impact_area[0])
-
-        file.write("LAR onset frame via glottal area (linear fit, not used for evaluation): ")
-        file.write(str(impact_area[0]))
-        file.write("\n\n")
-except:
-    pass
+# try:
+#     # (distance)
+#     if len(distance_list) > 7:
+#         impact_distance, lines_lar_begin_distance = fit.linear_fit(frame_number_list_distance, distance_list)
+#
+#         plot.linearFitDistance(frame_number_list_distance, distance_list, lines_lar_begin_distance, impact_distance,
+#                                saving_path + patient + "_" + sequence_number +
+#                                "_Linear_Fit_Vocal_Fold_Edge_Distance.png")
+#
+#         print("Vocal fold edge distance: ", impact_distance[0])
+#
+#         file.write("LAR ONSET TIME (LINEAR FIT, NOT USED FOR EVALUATION)\n\n")
+#
+#         file.write("LAR onset frame via vocal fold edge distance (linear fit, not used for evaluation): ")
+#         file.write(str(impact_distance[0]))
+#         file.write("\n")
+#
+#     # (angle)
+#     if len(angle_list) > 7:
+#         impact_angle, lines_lar_begin_angle = fit.linear_fit(frame_number_list_angle, angle_list)
+#
+#         plot.linearFitAngle(frame_number_list_angle, angle_list, lines_lar_begin_angle, impact_angle, saving_path +
+#                             patient + "_" + sequence_number + "_Linear_Fit_Glottal_Angle.png")
+#
+#         print("Glottal angle: ", impact_angle[0])
+#
+#         file.write("LAR onset frame via glottal angle (linear fit, not used for evaluation): ")
+#         file.write(str(impact_angle[0]))
+#         file.write("\n")
+#
+#     # (area)
+#     if len(area_list) > 7:
+#         impact_area, lines_lar_begin_area = fit.linear_fit(frame_number_list_area, area_list)
+#
+#         plot.linearFitArea(frame_number_list_area, area_list, lines_lar_begin_area, impact_area, saving_path +
+#                            patient + "_" + sequence_number + "_Linear_Fit_Glottal_Area.png")
+#
+#         print("Glottal area: ", impact_area[0])
+#
+#         file.write("LAR onset frame via glottal area (linear fit, not used for evaluation): ")
+#         file.write(str(impact_area[0]))
+#         file.write("\n\n")
+# except:
+#     pass
 
 try:
     file.write("Initial glottal angle in degrees (first data point): " + str(angle_list[0]) + "\n\n")

@@ -89,6 +89,7 @@ def getFitDropletList(droplets_list):
     """
     x_list = list()
     y_list = list()
+
     for droplet in droplets_list:
         x_list.append(droplet[1][0])
         y_list.append(droplet[1][1])
@@ -147,44 +148,20 @@ def getFitDropletList(droplets_list):
         error_point = np.sqrt(pow((x_list[i] - x_line), 2) + pow((y_list[i] - y_line), 2))
         error_slope += error_point
 
+    # print("\n")
+    # print("Mean Error OLS in pixel: ", error_slope/len(x_list))
+    # print("Mean Error ODR in pixel: ", error_odr/len(x_list))
+
     if error_odr <= error_slope:
         return fit_odr
     else:
         return fit_slope
 
-    # error_fit = 0
-    # for i in range(0, len(x_list)):
-    #     error_point = abs(y_list[i] - (fit[0] * x_list[i] + fit[1]))
-    #     error_fit += error_point
-    # slope = get_slope(droplets_list[0][1], droplets_list[-1][1])
-    # intercept = get_y_intercept(droplets_list[0][1], slope)
-    # fit_slope = [slope, intercept]
-    # if not fit_slope[0] == 0:
-    #     error_slope = 0
-    #     for i in range(0, len(x_list)):
-    #         error_point = abs(x_list[i] - ((y_list[i] - fit_slope[1])/fit_slope[0]))
-    #         error_slope += error_point
-    #     if error_fit <= error_slope:
-    #         return fit
-    #     else:
-    #         return fit_slope
-    # else:
-    #     return fit
-
-    # # calculate fit line (geometric fitting)
-    # [vx, vy, x, y] = cv2.fitLine(droplets_list[1], cv2.DIST_L2, 0, 0.01, 0.01)
-    # # calculate slope of fit line
-    # slope = vy/vx
-    # # calculate y axis intercept
-    # intercept = y - vy/vx * x
-    # fit = [slope, intercept]
-    # return fit
-
 
 def getAcceptanceAngle(droplets_list, frame_number):
     """
     - calculates "acceptance angle" of conical droplet search space
-    - angle is function of number of frames elapsed since last valid droplet detection
+    - angle decreases from 30 to 22 degrees with increasing number of frames elapsed since last valid droplet detection
     - droplets_list[-1][0]: index of frame with last valid droplet detection
     :param droplets_list: list of droplet objects and corresponding frame indices
     :param frame_number: current frame index
@@ -214,7 +191,7 @@ def getCylinderMask(frame, fit, distance, to_add, acceptance_angle, last_droplet
     :param droplets_list: list with all detected objects/droplets
     :return: mask with search space as bright object
     """
-    # angle of fit line with respect to horizontal direction in frame
+    # angle of fit line with respect to horizontal direction in frame in degree
     angle = (-1) * (math.atan2(abs((fit[0] - 0)), abs(1))) * (180 / math.pi)
     # calculate translation distances of edges of search cone with respect to horizontal direction
     x_estimate = math.cos((math.pi / 180.0) * angle) * (distance + to_add)
@@ -278,7 +255,7 @@ def angle_straight_lines(slope_1, slope_2):
     """
     # apply addition theorem for inverse tangent
     angle = math.atan2(abs((slope_1 - slope_2)), abs(1 + slope_1 * slope_2))
-    return (angle / math.pi) * 180
+    return (angle / math.pi) * 180.0
 
 
 def iterative_impact(trajectory, frame_numbers):
@@ -286,7 +263,7 @@ def iterative_impact(trajectory, frame_numbers):
     - executes iterative procedure to differentiate droplet impact and rebound events
     :param trajectory: sampling points on droplet trajectory
     :param frame_numbers: frame indices corresponding to sampling points
-    :return: angle: droplet rebound angle (zero degrees if no rebound detected),
+    :return: angle: droplet rebound angle (acute angle between trajectory segments; zero if no rebound detected),
              list_first: sampling points on first fit line,
              list_second: sampling points on second fit line,
              frame_numbers[index + 2]: index of frame showing instant of droplet rebound
@@ -344,20 +321,14 @@ def iterative_impact(trajectory, frame_numbers):
         odr_output1 = odr1.run()
 
         # print orthogonal distance regression output
-        print("ODR result: ")
-        odr_output1.pprint()
-        print("odr_output1.beta: ", odr_output1.beta)
+        # print("ODR result: ")
+        # odr_output1.pprint()
+        # print("odr_output1.beta: ", odr_output1.beta)
 
         # print ordinary least squares output
-        print("OLS result: ")
-        print(fit_first)
-        print("\n")
-
-        # # ordinary least squares approach
-        # fits_first.append((fit_first[0], fit_first[1]))
-        # # calculate error sum of first fit line
-        # for point in first_points:
-        #     error_sum_first = error_sum_first + abs(point[1] - (point[0] * fit_first[0] + fit_first[1]))
+        # print("OLS result: ")
+        # print(fit_first)
+        # print("\n")
 
         # orthogonal distance regression approach
         fits_first.append((odr_output1.beta[0], odr_output1.beta[1]))
@@ -397,14 +368,14 @@ def iterative_impact(trajectory, frame_numbers):
         odr_output2 = odr2.run()
 
         # print orthogonal distance regression result
-        print("ODR result: ")
-        odr_output2.pprint()
-        print("odr_output2.beta: ", odr_output2.beta)
+        # print("ODR result: ")
+        # odr_output2.pprint()
+        # print("odr_output2.beta: ", odr_output2.beta)
 
         # print ordinary least squares result
-        print("OLS result: ")
-        print(fit_second)
-        print("\n")
+        # print("OLS result: ")
+        # print(fit_second)
+        # print("\n")
 
         # save slope and y-axis intercept of second list for later use
         # fits_second.append((fit_second[0], fit_second[1]))
@@ -419,7 +390,7 @@ def iterative_impact(trajectory, frame_numbers):
             # total least squares approach
             # calculate coordinates of point on line at orthogonal distance to current point
             x_line = (point[0] + odr_output2.beta[0] * point[1] - odr_output2.beta[0] * odr_output2.beta[1]) / \
-                     (1.0 + pow((odr_output2.beta[0]), 2))
+                     (1.0 + pow(odr_output2.beta[0], 2))
             y_line = odr_output2.beta[0] * x_line + odr_output2.beta[1]
             # calculate orthogonal distance to line for current point
             error_sum_second += np.sqrt(pow((point[0] - x_line), 2) + pow((point[1] - y_line), 2))
@@ -469,8 +440,8 @@ def iterative_impact(trajectory, frame_numbers):
 
 def getMainTrajectoryUntilImpact(droplets_list, frame_impact):
     """
-    - returns objects on principal trajectory
-    - (objects found before droplet rebound)
+    - returns sampling points on principal trajectory
+    - (all sampling points prior to moment of identified droplet rebound)
     :param droplets_list: list with all objects (before and after rebound event)
     :param frame_impact: instant of droplet impact/rebound
     :return: list of objects corresponding to principal trajectory

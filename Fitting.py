@@ -299,6 +299,7 @@ def interception_two_lines(slope_1, intercept_1, slope_2, intercept_2):
 def iterative(trajectory):
     """
     - identifies linear fit for droplet trajectory and searches for rebound events
+    - (not used in present study)
     :param trajectory: sampling point on droplet trajectory
     :return: point of intersection of two fit lines, parameters of two identified fit lines for two subsets
     """
@@ -391,6 +392,7 @@ def iterative(trajectory):
 def linear_fit(frames, signal):
     """
     - computes linear fit
+    - (not used in present study)
     :param frames: frame indices corresponding to signal
     :param signal: signal (data points)
     :return: impact: point of intersection of the two fit lines, linear_lar_begin: parameters of fit lines
