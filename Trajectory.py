@@ -80,10 +80,10 @@ def getBestPointInNextFrame(droplets_list, frame_number):
 
 def getFitDropletList(droplets_list):
     """
-    - computes linear fit of detected droplet positions
-    - ODR cannot be used for vertical droplet trajectories
+    - computes linear fit of detected droplet positions using orthogonal distance regression (ODR) or OLS regression
+    - ODR/OLS cannot be used for vertical droplet trajectories
     - hence, manual line parameter determination using last and first droplet in list is applied in this case
-    - fit with lowest residual is retained
+    - fit with lowest residual is retained (ODR or OLS)
     :param droplets_list: list with object (droplet) positions
     :return: slope and value at x=0 of fit line
     """
@@ -338,7 +338,7 @@ def iterative_impact(trajectory, frame_numbers):
         for point in first_points:
             # calculate coordinates of point on line at orthogonal distance to current point
             x_line = (point[0] + odr_output1.beta[0] * point[1] - odr_output1.beta[0] * odr_output1.beta[1]) / \
-                     (1.0 + pow((odr_output1.beta[0]), 2))
+                     (1.0 + pow(odr_output1.beta[0], 2))
             y_line = odr_output1.beta[0] * x_line + odr_output1.beta[1]
             # calculate orthogonal distance to line for current point
             error_sum_first += np.sqrt(pow((point[0] - x_line), 2) + pow((point[1] - y_line), 2))

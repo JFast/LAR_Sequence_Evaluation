@@ -27,8 +27,8 @@ params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
-pat = "02"
-sequence_number = "08"
+pat = "03"
+sequence_number = "14"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
@@ -91,6 +91,7 @@ while 1:
             # apply OpenCV blob detection on inverted frame after background subtraction to find blobs in foreground
             droplets = detector.detect(cv2.bitwise_not(fgmask_opt))
             for droplet in droplets:
+                # if no valid droplet detected yet
                 if not first_frame_detect:
                     # only retain candidates with minimum radius MIN_DROPLET_RADIUS
                     if droplet.size / 2.0 > params.MIN_DROPLET_RADIUS:
@@ -441,26 +442,76 @@ if tracking:
         if angle < 40:
             # potential impact: take last frame index as impact frame
             frame_impact = droplets_list[-1][0]
+            # store result for second impact/rebound identification loop
+            angle_greater_40 = False
         # acute angle between identified linear trajectory segments greater than 40 degrees: rebound expected
         else:
             # potential rebound: take frame index identified by function iterative_impact() as impact frame
             frame_impact = impact_number
             # remove frames after rebound from 'droplets_list'
             droplets_list = traj.getMainTrajectoryUntilImpact(droplets_list, frame_impact)
+            # store result for second impact/rebound identification loop
+            angle_greater_40 = True
         file.write("Tentative frame index of droplet impact (principal trajectory): " + str(frame_impact) + "\n\n")
 
         # NEW SECTION
+        print("Last frame index in 'droplets_list': ", droplets_list[-1][0])
         print("\n")
         print("'points' (first loop): ")
         print(points)
         print("\n")
-        print("'frame_impact' (first loop): ", frame_impact)
+        print("'list_first' (first loop): ")
+        print(list_first)
+        print("'list_second' (first loop): ")
+        print(list_second)
         print("\n")
-        # NEW SECTION ENDED
+        print("'frame_impact' (first loop): ", impact_number)
+        print("\n")
+
+        # draw fit lines
+        # get list of sampling points up to impact
+        droplets_list_before_impact = traj.getMainTrajectoryUntilImpact(droplets_list, impact_number)
+        # get linear fit for sampling points up to impact
+        fit_before = traj.getFitDropletList(droplets_list_before_impact)
+        # get first frame of sequence
+        video = cv2.VideoCapture(video_path)
+        ret, frame = video.read()
+        # draw all sampling points before impact on frame
+        for point in droplets_list_before_impact:
+            droplet = point[1]
+            frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 255, 0], -1)
+        # draw fit line for points before impact
+        frame = cv2.line(frame, (0, int(0 * fit_before[0] + fit_before[1])),
+                         (frame.shape[1], int(frame.shape[1] * fit_before[0] + fit_before[1])), [0, 200, 0], 1)
+
+        # get list of sampling points after impact
+        droplets_list_after_impact = []
+        droplets_list_after_impact = droplets_list[len(droplets_list_before_impact):]
+        if droplets_list_after_impact:
+            # get linear fit for sampling points after impact
+            fit_after = traj.getFitDropletList(droplets_list_after_impact)
+            # draw all sampling points after impact on frame
+            for point in droplets_list_after_impact:
+                droplet = point[1]
+                frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 0, 255], -1)
+            # draw fit line for points after impact
+            frame = cv2.line(frame, (0, int(0 * fit_after[0] + fit_after[1])),
+                             (frame.shape[1], int(frame.shape[1] * fit_after[0] + fit_after[1])), [0, 0, 200], 1)
+        # resize frame
+        frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
+                             interpolation=cv2.INTER_LINEAR)
+        # show result
+        cv2.imshow("Impact/rebound trajectories (first loop)", frame_large)
+        cv2.waitKey(2000)
+        cv2.destroyWindow("Impact/rebound trajectories (first loop)")
+        # save result
+        cv2.imwrite(saving_path + pat + "_" + sequence_number + "_Impact_Rebound_First_Loop.png",
+                    frame_large)
+        # END OF NEW SECTION
+
+        # print(droplets_list)
 
         # store image showing identified principal trajectory
-        print(droplets_list)
-
         # read first frame of sequence
         video = cv2.VideoCapture(video_path)
         ret, frame = video.read()
@@ -625,7 +676,7 @@ if tracking:
                                 cx, cy = traj.getCentroidOfContour(candidate_to_add)
                                 rebound_list.append([frame_number, (int(cx), int(cy))])
 
-                # show rebound trajectory analysis result
+                # show complete trajectory analysis result
                 for point in droplets_list:
                     droplet = point[1]
                     frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 255, 0], -1)
@@ -646,18 +697,19 @@ if tracking:
                         output_all.write(frame_large)
                 cv2.waitKey(1)
 
-        # reset video reader object
+        # reset video reader object and read first frame only
         video = cv2.VideoCapture(video_path)
-        # read first frame
         ret, frame = video.read()
-        # add rebound droplet positions to frame
-        for point in rebound_list:
-            droplet = point[1]
-            frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 0, 255], -1)
-        # add impact droplet positions to frame
+
+        # draw droplet positions on main trajectory in first frame
         for point in droplets_list:
             droplet = point[1]
             frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [155, 88, 0], -1)
+        # draw droplet positions on rebound trajectory in first frame
+        for point in rebound_list:
+            droplet = point[1]
+            frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 0, 255], -1)
+
         cv2.imwrite(saving_path + pat + "_" + sequence_number + "_Rebound_Trajectory.png", frame)
         cv2.imwrite("Cover_Image.png", frame)
 
@@ -666,7 +718,9 @@ if tracking:
         file.write("List of sampling points on rebound trajectory:\n")
         file.write(str(rebound_list))
         file.write("\n\n")
+
         tracking = True
+
         if len(rebound_list) <= 5:
             file.write("Not enough sampling points available on rebound trajectory.\n")
             # file.write("Evaluation of impact type not possible (not enough sampling points).\n")
@@ -675,6 +729,7 @@ if tracking:
             points = list()
             frames = list()
             # add main trajectory to 'points'
+            # 'droplets_list' may have been shortened if angle > 40°
             for i in range(6, len(droplets_list)):
                 droplet = droplets_list[i]
                 points.append(droplet[1])
@@ -690,6 +745,7 @@ if tracking:
         # set stimulation type to impact
         if not len(points) >= 7:
             tracking = False
+
         stimulation = "impact"
 
         if tracking:
@@ -709,11 +765,56 @@ if tracking:
             print("\n")
             print("'frame_impact' (second loop): ", impact_number)
             print("\n")
-            # NEW SECTION ENDED
+
+            # draw fit lines
+            complete_list = droplets_list[6:] + rebound_list[1:]
+            # get list of sampling points up to impact
+            droplets_list_before_impact = traj.getMainTrajectoryUntilImpact(complete_list, impact_number)
+            # get linear fit for sampling points up to impact
+            fit_before = traj.getFitDropletList(droplets_list_before_impact)
+            # get first frame of sequence
+            video = cv2.VideoCapture(video_path)
+            ret, frame = video.read()
+            # draw all sampling points before impact on frame
+            for point in droplets_list_before_impact:
+                droplet = point[1]
+                frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 255, 0], -1)
+            # draw fit line for points before impact
+            frame = cv2.line(frame, (0, int(0 * fit_before[0] + fit_before[1])),
+                             (frame.shape[1], int(frame.shape[1] * fit_before[0] + fit_before[1])), [0, 200, 0], 1)
+
+            # get list of sampling points after impact
+            droplets_list_after_impact = complete_list[len(droplets_list_before_impact):]
+            if droplets_list_after_impact:
+                # get linear fit for sampling points after impact
+                fit_after = traj.getFitDropletList(droplets_list_after_impact)
+                # draw all sampling points after impact on frame
+                for point in droplets_list_after_impact:
+                    droplet = point[1]
+                    frame = cv2.circle(frame, (droplet[0], droplet[1]), 1, [0, 0, 255], -1)
+                # draw fit line for points after impact
+                frame = cv2.line(frame, (0, int(0 * fit_after[0] + fit_after[1])),
+                                 (frame.shape[1], int(frame.shape[1] * fit_after[0] + fit_after[1])), [0, 0, 200], 1)
+            # resize frame
+            frame_large = cv2.resize(frame, (int(2.0 * frame.shape[1]), int(2.0 * frame.shape[0])),
+                                     interpolation=cv2.INTER_LINEAR)
+            # show result
+            cv2.imshow("Impact/rebound trajectories (second loop)", frame_large)
+            cv2.waitKey(2000)
+            cv2.destroyWindow("Impact/rebound trajectories (second loop)")
+            # save result
+            cv2.imwrite(saving_path + pat + "_" + sequence_number + "_Impact_Rebound_Second_Loop.png",
+                        frame_large)
+
+            # END OF NEW SECTION
 
             # if acute angle between principal and rebound trajectories below 15 degrees: impact identified
             if angle < 15:
                 stimulation = "impact"
+                # if deviation of more than 40 degrees found in first impact/rebound identification loop:
+                # impact/rebound identification not reliable
+                if angle_greater_40:
+                    stimulation = "unclear"
             # if acute angle between principal and rebound trajectories greater than 15 degrees
             else:
                 # calculate Euclidean distance between first and last sampling point on principal trajectory
@@ -726,6 +827,7 @@ if tracking:
                 # rebound trajectory (error handling)
                 if distance_rebound/distance_main < (1/7):
                     stimulation = "impact"
+                    tracking = False
                 else:
                     stimulation = "rebound"
 
