@@ -1,4 +1,4 @@
-# LAR_Sequence_Evaluation_Laryngoscope
+# LAR_Sequence_Evaluation
 This repository contains source code for the computational analysis of endoscopic high-speed sequences showing the laryngeal adductor reflex (LAR) response after droplet-based stimulation.
 
 THIS REPOSITORY IS PROVIDED PRIOR TO ACCEPTANCE OF THE ASSOCIATED MANUSCRIPT.
