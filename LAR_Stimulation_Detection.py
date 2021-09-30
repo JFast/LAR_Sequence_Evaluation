@@ -27,8 +27,8 @@ params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
-pat = "03"
-sequence_number = "14"
+pat = "19"
+sequence_number = "04"
 # use avi file
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
