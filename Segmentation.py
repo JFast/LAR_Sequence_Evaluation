@@ -351,10 +351,6 @@ def regionGrowing(frame_gray, seed_points, homogeneity_criterion):
         # add newly segmented candidate pixels for current seed point to mask of global segmentation result
         segmented_frame[mask_to_add == 255] = 255
     # initialize circular kernel for morphological closing operation
-    # ORIGINAL 3 LINES BELOW
-    # kernel = np.ones((11, 11)).astype('uint8')
-    # kernel = cv2.circle(kernel, (5, 5), 5, 255, -1)
-    # segmented_frame = cv2.morphologyEx(segmented_frame, cv2.MORPH_CLOSE, kernel)
 
     kernel = np.zeros((11, 11)).astype('uint8')
     kernel = cv2.circle(kernel, (5, 5), 5, 1, -1)
