@@ -89,3 +89,7 @@ Contains auxiliary functions for window handling, frame sequence input/output, a
 ### `Plots.py`
 
 Contains auxiliary functions for result visualization using diagrams.
+
+# Notes
+
+Glottal angle/glottal area/vocal fold edge distance returned in degrees/percent of total frame area/pixel, respectively.
