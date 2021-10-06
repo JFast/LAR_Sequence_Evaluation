@@ -93,3 +93,5 @@ Contains auxiliary functions for result visualization using diagrams.
 # Notes
 
 Glottal angle/glottal area/vocal fold edge distance returned in degrees/percent of total frame area/pixel, respectively.
+
+All provided files are extensively commented to facilitate code comprehension.
