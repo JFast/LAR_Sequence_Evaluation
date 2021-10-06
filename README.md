@@ -40,6 +40,10 @@ All code executable on a standard desktop PC (no GPU required).
 
 Contains preset parameter values for background model and stimulation droplet detection.
 
+### `Preprocessing.py`
+
+Contains auxiliary functions for frame preprocessing: contrast enhancement, channel/grayscale conversion, data type conversion, filtering, 
+
 ### `EndoCam_Calibration.py`
 
 Performs standard calibration of the MIT-LAR laryngoscope using a set of images of an asymmetrical circle grid. Uses identified distortion coefficients for undistortion of sample image. Returns result.
@@ -51,6 +55,10 @@ Contains functions for the analytical approximation of data points representing 
 ### `DisplayVideo.py`
 
 Contains auxiliary functions for window handling, frame sequence input/output, and visualization of (intermediate) results of algorithm for automatic extraction of glottal parameters.
+
+### `Plots.py`
+
+Contains auxiliary functions for result visualization using diagrams.
 
 ## Main Algorithms
 
