@@ -34,6 +34,16 @@ All code executable on a standard desktop PC (no GPU required).
 
 # Description of Source Files
 
+## Main Algorithms
+
+### `LAR_Stimulation_Detection.py`
+
+Performs automatic localization and tracking of MIT-LAR stimulation droplet after background subtraction. Differentiates impact/rebound events. Searches for additional droplets. Returns results (frame sequences, text file containing result summary, image files).
+
+### `LAR_Onset_Detection.py`
+
+Performs automatic detection of glottal reference point and contour and attempts automatic correction of glottal midline orientation (strictly vertical orientation desired). Estimates temporal evolution of glottal area and vocal fold edge angle and distance over frame sequence. Performs analytical modeling of identified time courses using different fit functions. Returns results (frame sequences, text file containing result summary, plots, image files).
+
 ## Auxiliary Source Files
 
 ### `EndoCam_Calibration.py`
@@ -44,13 +54,13 @@ Performs standard calibration of the MIT-LAR laryngoscope using a set of images 
 
 Contains preset parameter values for background model and MIT-LAR stimulation droplet detection.
 
-### `Trajectory.py`
-
-Contains auxiliary functions for MIT-LAR stimulation droplet detection and tracking, trajectory estimation and linear orthogonal distance regression, and rebound/impact distinction.
-
 ### `Preprocessing.py`
 
 Contains auxiliary functions for frame preprocessing: contrast enhancement, channel/grayscale conversion, data type conversion, and filtering.
+
+### `Trajectory.py`
+
+Contains auxiliary functions for MIT-LAR stimulation droplet detection and tracking, trajectory estimation and linear orthogonal distance regression, and rebound/impact distinction.
 
 ### `ReferencePoint.py`
 
@@ -59,6 +69,14 @@ Contains auxiliary functions required for the execution of a method proposed by 
 ### `Segmentation.py`
 
 Contains auxiliary functions for the automatic estimation of the glottal contour (label/grid/seed point creation, watershed segmentation, region growing, edge detection, glottal midline orientation detection, etc.).
+
+### `UserInteraction.py`
+
+Contains auxiliary functions for user interaction during a potential correction of the initial glottis segmentation by a combination of watershed/region growing procedures.
+
+### `VocalFolds.py`
+
+Contains auxiliary functions for convex hull identification, landmark localization, and angle/distance/slope calculation, as required for the estimation of glottal parameters.
 
 ### `Fitting.py`
 
@@ -71,22 +89,3 @@ Contains auxiliary functions for window handling, frame sequence input/output, a
 ### `Plots.py`
 
 Contains auxiliary functions for result visualization using diagrams.
-
-### `UserInteraction.py`
-
-Contains auxiliary functions for user interaction during a potential correction of the initial glottis segmentation by a combination of watershed/region growing procedures.
-
-### `VocalFolds.py`
-
-Contains auxiliary functions for convex hull identification, landmark localization, and angle/distance/slope calculation, as required for the estimation of glottal parameters.
-
-## Main Algorithms
-
-### `LAR_Stimulation_Detection.py`
-
-Performs automatic localization and tracking of MIT-LAR stimulation droplet after background subtraction. Differentiates impact/rebound events. Searches for additional droplets. Returns results (frame sequences, text file containing result summary, image files).
-
-### `LAR_Onset_Detection.py`
-
-Performs automatic detection of glottal reference point and contour and attempts automatic correction of glottal midline orientation (strictly vertical orientation desired). Estimates temporal evolution of glottal area and vocal fold edge angle and distance over frame sequence. Performs analytical modeling of identified time courses using different fit functions. Returns results (frame sequences, text file containing result summary, plots, image files).
-
