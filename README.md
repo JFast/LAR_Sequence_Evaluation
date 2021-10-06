@@ -11,7 +11,7 @@ THIS REPOSITORY IS PROVIDED PRIOR TO ACCEPTANCE OF THE ASSOCIATED MANUSCRIPT.
 
 # Requirements
 
-Required packages/libraries: *OpenCV 4*, *NumPy*, *SciPy*, *SymPy*, *Matplotlib*.
+Required packages/libraries: *OpenCV*, *NumPy*, *SciPy*, *SymPy*, *Matplotlib*.
 
 Source code developed in *Python* (version 3.8.8) using the *PyCharm Professional* IDE (version 2021.1, JetBrains s.r.o., Prague, Czech Republic).
 
