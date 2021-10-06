@@ -67,10 +67,10 @@ def changeMask(x, y):
 
 
 # PATH DEFINITIONS
-patient = "19"
-sequence_number = "03"
+patient = "01"
+sequence_number = "01"
 # SPREADSHEET DEFINITIONS
-spreadsheet_row = 250
+spreadsheet_row = 10
 # selection of glottal orientation correction method ('PCA' or 'iterative' method)
 mode_orientation_correction = "iterative"
 # use avi file
@@ -81,10 +81,10 @@ video_path = r"F:/LARvideos/videos_annotated/pat_" + patient + "/es_01_pat_" + p
 # "/es_01_pat_" + patient + "_seq_" + sequence_number + ".mp4"
 
 # output file path
-saving_path = r"F:/Masterarbeit_Andra_Oltmann/Results_TMI/LAR_Onset_Detection/"
+saving_path = r"F:/SAVING/PATH/LAR_Onset_Detection/"
 
 # spreadsheet file path
-spreadsheet_path = 'F:/Masterarbeit_Andra_Oltmann/Results_TMI/Overview_Evaluation_Results.xlsx'
+spreadsheet_path = 'F:/SPREADSHEET/PATH/Overview_Evaluation_Results.xlsx'
 
 # open spreadsheet
 spreadsheet = pxl.load_workbook(spreadsheet_path)
