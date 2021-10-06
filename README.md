@@ -36,6 +36,10 @@ All code executable on a standard desktop PC (no GPU required).
 
 ## Auxiliary Source Files
 
+### `Parameters.py`
+
+Contains preset parameter values for background model and stimulation droplet detection.
+
 ### `EndoCam_Calibration.py`
 
 Performs standard calibration of the MIT-LAR laryngoscope using a set of images of an asymmetrical circle grid. Uses identified distortion coefficients for undistortion of sample image. Returns result.
