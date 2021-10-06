@@ -5,7 +5,6 @@ import numpy as np
 def calculateIntensityColumn(frame):
     """
     - computes average intensity per column of single frame
-    - (yields row of intensity variation matrix S)
     :param frame: frame (matrix) as array
     :return: array with average column intensity per frame (sum of intensity per column / number of rows)
     """
@@ -24,7 +23,6 @@ def calculateIntensityColumn(frame):
 def calculateIntensityRow(frame):
     """
     - computes average intensity per row of single frame
-    - (yields row of intensity variation matrix S)
     :param frame: frame (matrix) as array
     :return: array with average row intensity per frame (sum of intensity per row / number of columns)
     """
