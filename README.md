@@ -68,6 +68,10 @@ Contains auxiliary functions for window handling, frame sequence input/output, a
 
 Contains auxiliary functions for result visualization using diagrams.
 
+### `Trajectory.py`
+
+Contains auxiliary functions for MIT-LAR stimulation droplet detection and tracking, trajectory estimation and linear orthogonal distance regression, and rebound/impact distinction.
+
 ## Main Algorithms
 
 ### `LAR_Stimulation_Detection.py`
