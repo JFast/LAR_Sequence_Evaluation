@@ -33,3 +33,17 @@ All code executable on a standard desktop PC (no GPU required).
 ```
 
 # Description of Source Files
+
+## Laryngoscope Calibration
+
+### `EndoCam_Calibration.py`
+
+Performs standard calibration of the MIT-LAR laryngoscope using a set of images of an asymmetrical circle grid. Uses identified distortion coefficients for undistortion of sample image. Returns result.
+
+## Result Visualization
+
+### `DisplayVideo.py`
+
+Contains several functions for window handling, frame sequence input/output, and visualization of (intermediate) results of algorithm for automatic extraction of glottal parameters.
+
+
