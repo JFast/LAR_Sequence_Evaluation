@@ -27,20 +27,16 @@ params_blob.minInertiaRatio = params.MIN_INERTIA_RATIO
 detector = cv2.SimpleBlobDetector_create(params_blob)
 
 # PATH DEFINITION
-pat = "19"
-sequence_number = "04"
-# use avi file
+pat = "01"
+sequence_number = "01"
 video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number + \
              "\es_01_pat_" + pat + "_seq_" + sequence_number + ".avi"
-# use mp4 file
-# video_path = r"F:/LARvideos/videos_annotated/pat_" + pat + "\es_01_pat_" + pat + "_seq_" + sequence_number +
-# "\es_01_pat_" + pat + "_seq_" + sequence_number + ".mp4"
 
 # load frame sequence
 video = cv2.VideoCapture(video_path)
 
 # FILE FOR RESULT STORAGE
-saving_path = r"F:/Masterarbeit_Andra_Oltmann/Results_TMI/LAR_Stimulation_Detection/"
+saving_path = r"F:/SAVING/PATH/LAR_Stimulation_Detection/"
 file = open(saving_path + pat + "_" + sequence_number + "_Evaluation.txt", "w")
 file.write("EVALUATION\n")
 file.write("Sequence identifier: es_01_pat_" + pat + "_seq_" + sequence_number + "\n\n")
