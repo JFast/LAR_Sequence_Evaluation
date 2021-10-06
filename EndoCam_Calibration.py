@@ -10,7 +10,7 @@ frame_array = []
 
 for sequence_index in range(1, 21):
     # define sequence folder path
-    sequence_path = r"E:/210507_Calibration/001/Sequences/" + str(sequence_index) + ".avi"
+    sequence_path = r"E:/PATH/TO/SEQUENCE/" + str(sequence_index) + ".FILE_TYPE"
 
     # load sequence
     sequence = display.loadVideo(sequence_path)
@@ -117,7 +117,7 @@ params.minDistBetweenBlobs = 3
 
 detector = cv2.SimpleBlobDetector_create(params)
 
-saving_path = r"E:/Masterarbeit_Andra_Oltmann/Results_TMI/Calibration_Results/"
+saving_path = r"E:/OUTPUT/PATH/"
 
 # array for frames with found circles
 frame_array_circles = []
@@ -211,7 +211,7 @@ for frame in frame_array:
     index += 1
 
 # read test grid image
-grid_path = r"E:/210507_Calibration/Calibration_Test_Grid.png"
+grid_path = r"E:/GRID/PATH/Calibration_Test_Grid.png"
 grid_img = cv2.imread(grid_path)
 
 # undistort frame
