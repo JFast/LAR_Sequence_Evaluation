@@ -34,7 +34,7 @@ All code executable on a standard desktop PC (no GPU required).
 
 # Description of Source Files
 
-## Helper Files
+## Auxiliary Source Files
 
 ### `EndoCam_Calibration.py`
 
@@ -42,16 +42,15 @@ Performs standard calibration of the MIT-LAR laryngoscope using a set of images 
 
 ### `Fitting.py`
 
-Contains functions for the analytical approximation of data points representing the temporal evolution of the glottal area and the vocal fold edge angle and distance using different model functions. Further contains helper functions for identification of relevant points (intersections, inflections, etc.), conversion between representations, iterative identification of linear segments of MIT-LAR stimulation droplet trajectories, calculation of derivatives, estimation of characteristical angular velocities, and RMSE/MAE calculation.
+Contains functions for the analytical approximation of data points representing the temporal evolution of the glottal area and the vocal fold edge angle and distance using different model functions. Contains auxiliary functions for identification of relevant points (intersections, inflections, etc.), conversion between representations, iterative identification of linear segments of MIT-LAR stimulation droplet trajectories, calculation of derivatives, estimation of characteristical angular velocities, and RMSE/MAE calculation.
 
 ### `DisplayVideo.py`
 
-Contains functions for window handling, frame sequence input/output, and visualization of (intermediate) results of algorithm for automatic extraction of glottal parameters.
+Contains auxiliary functions for window handling, frame sequence input/output, and visualization of (intermediate) results of algorithm for automatic extraction of glottal parameters.
 
 ## Main Algorithms
 
 ### `LAR_Onset_Detection.py`
 
-
-
+Performs automatic detection of glottal reference point and contour and attempts automatic correction of glottal midline orientation (strictly vertical orientation desired). Estimates temporal evolution of glottal area and vocal fold edge angle and distance over frame sequence. Performs analytical modeling of identified time courses using different fit functions. Returns results (frame sequences, text file containing result summary, plots, image files).
 
