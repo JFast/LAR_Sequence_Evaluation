@@ -1,7 +1,7 @@
 # LAR_Sequence_Evaluation
 This repository contains source code for the computational analysis of endoscopic high-speed sequences showing the laryngeal adductor reflex (LAR) response after droplet-based stimulation.
 
-THIS REPOSITORY IS PROVIDED PRIOR TO ACCEPTANCE OF THE ASSOCIATED MANUSCRIPT.
+THIS REPOSITORY IS PROVIDED FOR PEER REVIEW PURPOSES; THE ASSOCIATED MANUSCRIPT HAS NOT BEEN ACCEPTED FOR PUBLICATION.
 
 # Table of Contents
 * [Requirements](#requirements)
@@ -42,7 +42,11 @@ Performs standard calibration of the MIT-LAR laryngoscope using a set of images 
 
 ### `Parameters.py`
 
-Contains preset parameter values for background model and stimulation droplet detection.
+Contains preset parameter values for background model and MIT-LAR stimulation droplet detection.
+
+### `Trajectory.py`
+
+Contains auxiliary functions for MIT-LAR stimulation droplet detection and tracking, trajectory estimation and linear orthogonal distance regression, and rebound/impact distinction.
 
 ### `Preprocessing.py`
 
@@ -68,9 +72,13 @@ Contains auxiliary functions for window handling, frame sequence input/output, a
 
 Contains auxiliary functions for result visualization using diagrams.
 
-### `Trajectory.py`
+### `UserInteraction.py`
 
-Contains auxiliary functions for MIT-LAR stimulation droplet detection and tracking, trajectory estimation and linear orthogonal distance regression, and rebound/impact distinction.
+Contains auxiliary functions for user interaction during a potential correction of the initial glottis segmentation by a combination of watershed/region growing procedures.
+
+### `VocalFolds.py`
+
+Contains auxiliary functions for convex hull identification, landmark localization, and angle/distance/slope calculation, as required for the estimation of glottal parameters.
 
 ## Main Algorithms
 
