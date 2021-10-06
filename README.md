@@ -50,7 +50,7 @@ Contains auxiliary functions for frame preprocessing: contrast enhancement, chan
 
 ### `ReferencePoint.py`
 
-Contains auxiliary functions required for the execution of a method proposed by Andrade-Miranda and Godino-Llorente ("ROI detection in high speed laryngeal images", 2014 IEEE 11th International Symposium on Biomedical Imaging, 2014, pp. 477–480, DOI: 10.1109/ISBI.2014.6867912), which locates a reference point to guide the subsequent glottis segmentation procedure.
+Contains auxiliary functions required for the execution of a method proposed by Andrade-Miranda and Godino-Llorente ("ROI detection in high speed laryngeal images", 2014 IEEE 11th International Symposium on Biomedical Imaging, 2014, pp. 477–480, DOI: [10.1109/ISBI.2014.6867912](https://doi.org/10.1109/ISBI.2014.6867912)), which locates a reference point to guide the subsequent glottis segmentation procedure.
 
 ### `Fitting.py`
 
