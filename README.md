@@ -50,6 +50,10 @@ Contains auxiliary functions for window handling, frame sequence input/output, a
 
 ## Main Algorithms
 
+### `LAR_Stimulation_Detection.py`
+
+Performs automatic localization and tracking of MIT-LAR stimulation droplet after background subtraction. Differentiates impact/rebound events. Searches for additional droplets. Returns results (frame sequences, text file containing result summary, image files).
+
 ### `LAR_Onset_Detection.py`
 
 Performs automatic detection of glottal reference point and contour and attempts automatic correction of glottal midline orientation (strictly vertical orientation desired). Estimates temporal evolution of glottal area and vocal fold edge angle and distance over frame sequence. Performs analytical modeling of identified time courses using different fit functions. Returns results (frame sequences, text file containing result summary, plots, image files).
