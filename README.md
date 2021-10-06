@@ -36,17 +36,21 @@ All code executable on a standard desktop PC (no GPU required).
 
 ## Auxiliary Source Files
 
+### `EndoCam_Calibration.py`
+
+Performs standard calibration of the MIT-LAR laryngoscope using a set of images of an asymmetrical circle grid. Uses identified distortion coefficients for undistortion of sample image. Returns result.
+
 ### `Parameters.py`
 
 Contains preset parameter values for background model and stimulation droplet detection.
 
 ### `Preprocessing.py`
 
-Contains auxiliary functions for frame preprocessing: contrast enhancement, channel/grayscale conversion, data type conversion, filtering, 
+Contains auxiliary functions for frame preprocessing: contrast enhancement, channel/grayscale conversion, data type conversion, and filtering.
 
-### `EndoCam_Calibration.py`
+### `ReferencePoint.py`
 
-Performs standard calibration of the MIT-LAR laryngoscope using a set of images of an asymmetrical circle grid. Uses identified distortion coefficients for undistortion of sample image. Returns result.
+Contains auxiliary functions required for the execution of a method proposed by Andrade-Miranda and Godino-Llorente ("ROI detection in high speed laryngeal images", 2014 IEEE 11th International Symposium on Biomedical Imaging, 2014, pp. 477–480, DOI: 10.1109/ISBI.2014.6867912), which locates a reference point to guide the subsequent glottis segmentation procedure.
 
 ### `Fitting.py`
 
