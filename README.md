@@ -23,7 +23,7 @@ All code executable on a standard desktop PC (no GPU required).
 
 ```BibTeX
 @misc{
-     FastOltmannIEEE.2021, 
+     FastOltmann.2021, 
      author={Jacob F. Fast and Andra Oltmann and Svenja Spindeldreier and Martin Ptok}, 
      year={2021},
      title={Code repository associated with the contribution "Computational Analysis of the Droplet-Stimulated Laryngeal Adductor Reflex in High-Speed Sequences"}, 
